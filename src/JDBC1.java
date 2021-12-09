@@ -114,11 +114,11 @@ public class JDBC1 {
         String lastn = scanner.next();
         System.out.println("Enter your phone number: ");
 
-        int phonenum = 0;
+        long phonenum = 0;
         boolean notnum = true;
         while (notnum) {
-            if (scanner.hasNextInt())
-                phonenum = scanner.nextInt();
+            if (scanner.hasNextLong())
+                phonenum = scanner.nextLong();
             else {
                 System.out.println("Please enter a 10 digit number!");
                 System.out.println("Enter your phone number: ");
@@ -128,7 +128,7 @@ public class JDBC1 {
             notnum = false;
         }
 
-        String sql2 = "INSERT INTO user1(user_id, email, password, first_name, last_name, phone_number) VALUES" + " ('"+usern+"', '"+email+"', '"+password+"', '"+firstn+"', '"+lastn+"', '"+phonenum+"');";
+        String sql2 = "INSERT INTO project.user(user_id, email, password, first_name, last_name, phone_number) VALUES" + " ('"+usern+"', '"+email+"', '"+password+"', '"+firstn+"', '"+lastn+"', '"+phonenum+"');";
 
         Statement statement1 = connection.createStatement();
         statement1.executeUpdate(sql2);

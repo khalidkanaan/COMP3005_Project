@@ -235,8 +235,100 @@ public class JDBC1 {
 
     }
     public static void addBook() throws SQLException{
+        Scanner scanner = new Scanner(System.in);
+//        System.out.println("Enter publisher name: ");
+//        String pubName = scanner.next();
+
+        System.out.println("Enter book ISBN: ");
+        String isbn = scanner.next();
+
+        String sql = "SELECT count(*) AS book_in_library FROM project.book WHERE isbn = '"+isbn+"';";
+        Statement findIsbn = connection.createStatement();
+        ResultSet matchBook = findIsbn.executeQuery(sql);
+
+        int inLibrary = 0;
+        while(matchBook.next()){
+            inLibrary = Integer.parseInt(matchBook.getString("book_in_library"));
+        }
+        if(inLibrary == 1){
+            System.out.println("Book found in library");
+            System.out.println("Enter the quantity of this books that you would like to add: ");
+            int stock_increase = checkQuantity(scanner, "Enter the quantity of this books that you would like to add: ");
+
+            String sql1 = "UPDATE project.book SET inventory = inventory + '"+stock_increase+"' WHERE isbn = '"+isbn+"';";
+
+            Statement increaseStock = connection.createStatement();
+            increaseStock.executeUpdate(sql1);
+
+        }else{
+            System.out.println("Enter book name: ");
+            scanner.nextLine();
+            String book_name = scanner.nextLine();
+
+            System.out.println("Enter Author's first name: ");
+            String author_fn = scanner.next();
+            System.out.println("Enter Author's last name: ");
+            String author_ln = scanner.next();
+            System.out.println("Enter genre: ");
+            String genre = scanner.next();
+            System.out.println("Enter number of pages: ");
+            int page_number = page_number = checkQuantity(scanner, "Enter number of pages: ");
+
+            System.out.println("Enter total price: ");
+            double total_price = checkMoney(scanner, "Enter total price: ");
+
+            System.out.println("Enter publisher fee: ");
+            double publish_fee = checkMoney(scanner, "Enter publisher fee: ");
+
+            System.out.println("Enter stock amount: ");
+            int stock = checkQuantity(scanner, "Enter stock amount: ");
+
+            String sql2 = "INSERT INTO project.book(isbn, title, author_firstn, author_lastn, genre, page_num, sell_price, publisher_fee, inventory) values " +
+                    " ('"+isbn+"', '"+book_name+"', '"+author_fn+"', '"+author_ln+"', '"+genre+"', '"+page_number+"', '"+total_price+"', '"+publish_fee+"', '"+stock+"');";
+
+            Statement insertBook = connection.createStatement();
+            insertBook.executeUpdate(sql2);
+        }
+    }
+
+    public static void linkPublisher(){
 
     }
+
+    public static double checkMoney(Scanner scanner, String message){
+        double money = 0;
+        boolean notnum = true;
+        while (notnum) {
+            if (scanner.hasNextDouble())
+                money = scanner.nextDouble();
+            else {
+                System.out.println("Please enter money value!");
+                System.out.println(message);
+                scanner.next();
+                continue;
+            }
+            notnum = false;
+        }
+        return money;
+    }
+
+    public static int checkQuantity(Scanner scanner, String message){
+        int quantity = 0;
+        boolean notnum = true;
+        while (notnum) {
+            if (scanner.hasNextInt())
+                quantity = scanner.nextInt();
+            else {
+                System.out.println("Please enter integer value!");
+                System.out.println(message);
+                scanner.next();
+                continue;
+            }
+            notnum = false;
+        }
+        return quantity;
+    }
+
     public static void removeBook() throws SQLException{
 
     }

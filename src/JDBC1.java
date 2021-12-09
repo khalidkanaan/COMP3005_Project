@@ -4,7 +4,7 @@ import java.util.Scanner;
 public class JDBC1 {
     static String jdbcURL = "jdbc:postgresql://localhost:5432/postgres";
     static String username = "postgres";
-    static String password = "0795";
+    static String password = "Fifa415278";
     static Connection connection;
 
     static {

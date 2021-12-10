@@ -20,56 +20,57 @@ public class JDBC1 {
     }
 
     public static void main(String[] args) throws SQLException {
-        try {
-            System.out.println("Welcome to The Book Store!");
-            System.out.println();
-            System.out.println("type r to register an account");
-            System.out.println("type l to login to your account");
-            System.out.println("type h for more help");
-            System.out.println();
-
-            Scanner scanner = new Scanner(System.in);
-
-            while (scanner.hasNext()){
-                String s1 = scanner.next();
-                //exits the program if you write exit
-                if(s1.equals("exit")) {
-                    System.exit(0);
-
-                }else if(s1.equals("r")){
-                    registerAccount();
-                }else if(s1.equals("l")){
-                    logIn();
-                }else if(s1.equals("h")){
-                    System.out.println("h : help");
-                    System.out.println("r : register");
-                    System.out.println("s : search");
-                    System.out.println("cart: view cart");
-                    System.out.println("checkout : buy items in cart");
-                    System.out.println();
-                }
-            }
-            String email;
-            email = scanner.nextLine();
-            String pass;
-            System.out.println("Enter your password:");
-            pass = scanner.nextLine();
-            String sql = "SELECT * FROM project.user WHERE email = '"+email+"' AND "+"password = '"+pass+"';";
-
-            Statement statement = connection.createStatement();
-
-            ResultSet resultSet1 = statement.executeQuery(sql);
-
-            while(resultSet1.next()){
-                System.out.println("Welcome "+resultSet1.getString("user_id"));
-            }
-
-            connection.close();
-
-        }catch (SQLException e){
-            System.out.println("Connection error to PostgreSQL server");
-            e.printStackTrace();
-        }
+        salesCheck();
+//        try {
+//            System.out.println("Welcome to The Book Store!");
+//            System.out.println();
+//            System.out.println("type r to register an account");
+//            System.out.println("type l to login to your account");
+//            System.out.println("type h for more help");
+//            System.out.println();
+//
+//            Scanner scanner = new Scanner(System.in);
+//
+//            while (scanner.hasNext()){
+//                String s1 = scanner.next();
+//                //exits the program if you write exit
+//                if(s1.equals("exit")) {
+//                    System.exit(0);
+//
+//                }else if(s1.equals("r")){
+//                    registerAccount();
+//                }else if(s1.equals("l")){
+//                    logIn();
+//                }else if(s1.equals("h")){
+//                    System.out.println("h : help");
+//                    System.out.println("r : register");
+//                    System.out.println("s : search");
+//                    System.out.println("cart: view cart");
+//                    System.out.println("checkout : buy items in cart");
+//                    System.out.println();
+//                }
+//            }
+//            String email;
+//            email = scanner.nextLine();
+//            String pass;
+//            System.out.println("Enter your password:");
+//            pass = scanner.nextLine();
+//            String sql = "SELECT * FROM project.user WHERE email = '"+email+"' AND "+"password = '"+pass+"';";
+//
+//            Statement statement = connection.createStatement();
+//
+//            ResultSet resultSet1 = statement.executeQuery(sql);
+//
+//            while(resultSet1.next()){
+//                System.out.println("Welcome "+resultSet1.getString("user_id"));
+//            }
+//
+//            connection.close();
+//
+//        }catch (SQLException e){
+//            System.out.println("Connection error to PostgreSQL server");
+//            e.printStackTrace();
+//        }
 
     }
 
@@ -516,7 +517,63 @@ public class JDBC1 {
         }
     }
     public static void salesCheck() throws SQLException{
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("type p for publisher profit report"); //money paid to each publisher
+        System.out.println("type t for total sales report"); //show sales vs. expenditures
+        System.out.println("type g for total sales per genre report"); //sales per genres
+        System.out.println("type a for total sales per author report"); //sales per author
 
+        while(scanner.hasNext()){
+            String s1 = scanner.next();
+            if(s1.equals("p")){
+                String sql = "Select publisher_name, bank_account FROM project.publisher;";
+                Statement statement = connection.createStatement();
+                ResultSet result = statement.executeQuery(sql);
+                while (result.next()){
+                    System.out.println("Publisher profit report: ");
+                    System.out.println("Publisher: "+ result.getString("publisher_name") + " \t Publisher Store Profit: " + result.getString("bank_account"));
+                }
+            }
+
+            if(s1.equals("t")){
+                System.out.println("Total Sales Report: ");
+                String sql = "Select sum(sales * sell_price) AS salesSum FROM project.book;";
+                Statement statement = connection.createStatement();
+                ResultSet result = statement.executeQuery(sql);
+                int salesSum = 0;
+                while (result.next()){
+                    salesSum = result.getInt("salesSum");
+                }
+                String sql1 = "SELECT expenditure FROM project.owner;";
+                Statement statement1 = connection.createStatement();
+                ResultSet result1 = statement.executeQuery(sql1);
+                while (result1.next()){
+                    System.out.println("Total Revenue: "+salesSum+" Total Expenditure: "+result1.getDouble("expenditure"));
+                }
+            }
+
+            if(s1.equals("g")){
+                System.out.println("Genre Sales Report: ");
+                String sql = "SELECT DISTINCT genre, sum(sales * sell_price) AS revenue, sum(sales) AS salesSum FROM project.book GROUP BY genre;";
+                Statement statement = connection.createStatement();
+                ResultSet result = statement.executeQuery(sql);
+                while (result.next()){
+                    System.out.println("Genre: "+result.getString("genre")+" Total Sales: "+result.getInt("salesSum")+" Total Revenue: "+result.getDouble("revenue"));
+                }
+            }
+
+            if (s1.equals("a")){
+                System.out.println("Author Sales Report: ");
+                String sql = "SELECT DISTINCT author_firstn, author_lastn, sum(sales * sell_price) AS revenue, sum(sales) AS salesSum FROM project.book GROUP BY author_firstn, author_lastn;";
+                Statement statement = connection.createStatement();
+                ResultSet result = statement.executeQuery(sql);
+                while (result.next()){
+                    System.out.println("Author: "+result.getString("author_firstn")+" "+result.getString("author_lastn")+ " Total Sales: "+result.getInt("salesSum")+" Total Revenue: "+result.getDouble("revenue"));
+                }
+
+            }
+
+        }
     }
 
     public static void userActions() throws SQLException{

@@ -8,7 +8,7 @@ public class JDBC1 {
     static String password = "Fifa415278";
     static Connection connection;
 
-    private static String Userid;
+    private static String Login;
 
 
 
@@ -96,7 +96,9 @@ public class JDBC1 {
         statement1.executeUpdate(sql2);
         createAndLinkUserAddress(usern);
         linkUserToCart(usern);
+        Login = usern;
         userActions();
+
     }
 
     public static void logIn() throws SQLException{
@@ -124,7 +126,7 @@ public class JDBC1 {
             result = statement.executeQuery(sql);
         }
 
-        Userid = result.getString("user_id");
+        Login = result.getString("user_id");
         sql = "Select * FROM project.user WHERE email = '"+email+"' AND password ='"+password+"'AND isOwner='"+true+"';";
         statement = connection.createStatement();
         result = statement.executeQuery(sql);
@@ -802,6 +804,40 @@ public class JDBC1 {
 
 
     public static void addToCart() throws SQLException{
+        Scanner scanner =  new Scanner(System.in);
+        System.out.println("Enter ISBN Book you would like to Add");
+        int quantity = 0;
+        long s = 0;
+        int cartID=0;
+        String title="";
+
+        while(scanner.hasNext()){
+            s = checkLong(scanner,"Enter ISBN Book you would like to Add");
+            String sql = "SELECT * FROM project.book WHERE isbn ='"+s+"';";
+            Statement statement = connection.createStatement();
+            ResultSet result = statement.executeQuery(sql);
+            while(result.next()){
+                title = result.getString("title");
+                System.out.println("adding Book: "+title);
+
+            }
+            System.out.println("How many copies would you like?");
+            quantity = checkQuantity(scanner,"How many copies would you like?");
+        }
+
+        String sql = "SELECT cart_id FROM project.userAddress NATURAL JOIN project.cart WHERE user_id = '"+Login+"';";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+
+        while (result.next()){
+            cartID = result.getInt("cart_id");
+        }
+
+        String sql1 = "INSERT INTO project.cartItem(cart_id,isbn,quantity) VALUES ('"+cartID+"','"+s+"','"+quantity+"');";
+        Statement statement1 = connection.createStatement();
+        statement1.executeUpdate(sql1);
+        System.out.println("Added " + quantity+" copies of :" +title+ " to your cart.");
+
 
     }
     public static void removeCart() throws SQLException{

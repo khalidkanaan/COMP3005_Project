@@ -94,7 +94,8 @@ public class JDBC1 {
 
         Statement statement1 = connection.createStatement();
         statement1.executeUpdate(sql2);
-
+        createAndLinkUserAddress(usern);
+        linkUserToCart(usern);
         userActions();
     }
 
@@ -214,7 +215,7 @@ public class JDBC1 {
 
         int inLibrary = 0;
         while(matchBook.next()){
-            inLibrary = Integer.parseInt(matchBook.getString("book_in_library"));
+            inLibrary = matchBook.getInt("book_in_library");
         }
         if(inLibrary == 1){
             System.out.println("Book found in library");
@@ -321,7 +322,7 @@ public class JDBC1 {
 
         int inPublisher = 0;
         while(matchPublisher.next()){
-            inPublisher = Integer.parseInt(matchPublisher.getString("publisher_exist"));
+            inPublisher = matchPublisher.getInt("publisher_exist");
             publisher = matchPublisher.getString("publisher_name"); //if the publisher name was entered in lower case, this is corrected here.
         }
         if(inPublisher == 1) {
@@ -357,8 +358,70 @@ public class JDBC1 {
             createAndLinkPublisherAddress(publisher);
         }
     }
+    public static void createAndLinkUserAddress(String user_id) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter your street number: ");
+        int street_num = checkQuantity(scanner, "Enter your street number: ");
+        System.out.println("Enter your street name: ");
+        scanner.nextLine();
+        String street_name = scanner.nextLine();
+        System.out.println("Enter your apartment (number or letter): ");
+        String apartment = scanner.nextLine();
+        System.out.println("Enter your city name:");
+        String city = scanner.next();
+        System.out.println("Enter your province name: ");
+        String province = scanner.next();
+        System.out.println("Enter your country name: ");
+        scanner.nextLine();
+        String country = scanner.nextLine();
+        System.out.println("Enter your postal code: ");
+        String postal = scanner.next();
 
-    //function that creates the address and links it to cart
+
+        String sql = "INSERT INTO project.address(street_num, street_name, apartment, city, province, country, postal_code) VALUES" +
+                " ('"+street_num+"', '"+street_name+"', '"+apartment+"', '"+city+"', '"+province+"', '"+country+"', '"+postal+"');";
+
+
+        Statement statement1 = connection.createStatement();
+        statement1.executeUpdate(sql);
+
+        //looks up the address that we just added and finds the address_id
+        String sql2 = "SELECT * FROM project.address WHERE street_name = '"+street_name+"' AND street_num = '"+street_num+"' AND apartment = '"+apartment+"';";
+        Statement findAddress = connection.createStatement();
+        ResultSet matchAddress = findAddress.executeQuery(sql2);
+        int address_id = 0;
+        while(matchAddress.next()){
+            address_id = matchAddress.getInt("address_id");
+        }
+
+        //Adds the link between user and address
+        String sql3 = "INSERT INTO project.userAddress(address_id, user_id) values " +
+                " ('"+address_id+"', '"+user_id+"');";
+
+        Statement linkUserToAddress = connection.createStatement();
+        linkUserToAddress.executeUpdate(sql3);
+    }
+
+    public static void linkUserToCart(String user_id) throws SQLException {
+        //increments the bigserial of the cart_id in cart
+        String sql = "INSERT INTO project.cart VALUES(nextval('project.cart_cart_id_seq'::regclass));";
+        Statement statement = connection.createStatement();
+        statement.executeUpdate(sql);
+
+        String sql1 = "SELECT currval('project.cart_cart_id_seq'::regclass);";
+        Statement findCart = connection.createStatement();
+        ResultSet matchCart = findCart.executeQuery(sql1);
+        int cart_id = 0;
+        while(matchCart.next()){
+            cart_id = matchCart.getInt("currval");
+        }
+
+        String sql2 = "INSERT INTO project.userCart(user_id, cart_id) VALUES ('"+user_id+"', '"+cart_id+"');";
+        Statement statement1 = connection.createStatement();
+        statement1.executeUpdate(sql2);
+    }
+
+        //function that creates the address and links it to cart
     public static void createAndLinkPublisherAddress(String publisher_name) throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter street number: ");
@@ -391,7 +454,7 @@ public class JDBC1 {
         ResultSet matchAddress = findAddress.executeQuery(sql2);
         int address_id = 0;
         while(matchAddress.next()){
-            address_id = Integer.parseInt(matchAddress.getString("address_id"));
+            address_id = matchAddress.getInt("address_id");
         }
 
         //Adds the link between publisher and publisher address
@@ -739,7 +802,6 @@ public class JDBC1 {
 
 
     public static void addToCart() throws SQLException{
-
 
     }
     public static void removeCart() throws SQLException{

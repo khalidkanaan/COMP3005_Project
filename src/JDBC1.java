@@ -1,10 +1,11 @@
 import java.sql.*;
+import java.util.Random;
 import java.util.Scanner;
 
 public class JDBC1 {
     static String jdbcURL = "jdbc:postgresql://localhost:5432/postgres";
     static String username = "postgres";
-    static String password = "Fifa415278";
+    static String password = "0795";
     static Connection connection;
 
     private static String Userid;
@@ -76,8 +77,7 @@ public class JDBC1 {
     public static void registerAccount() throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your username: ");
-        String usern = scanner.next();
-
+        String usern = checkIdTaken(scanner);
 //        boolean idTaken = true;
 //        String temp;
 //
@@ -111,7 +111,8 @@ public class JDBC1 {
         System.out.println("Enter your email: ");
         String email = scanner.next();
         System.out.println("Enter your password: ");
-        String password = scanner.next();
+        scanner.nextLine();
+        String password = scanner.nextLine();
         System.out.println("Enter your first name: ");
         String firstn = scanner.next();
         System.out.println("Enter your last name: ");
@@ -447,6 +448,39 @@ public class JDBC1 {
         System.out.println("\ntype m to access menu");
         System.out.println("type b to go back");
 
+    }
+
+    public static String checkIdTaken(Scanner scanner) throws SQLException {
+        String id = "";
+        int userExists = 0;
+        boolean exists = true;
+        while(exists){
+            id = scanner.nextLine();
+            String sql = "SELECT count(*) AS userFound FROM project.user WHERE user_id = '"+id+"';";
+            Statement statement = connection.createStatement();
+            ResultSet result = statement.executeQuery(sql);
+
+            while (result.next()){
+                userExists = result.getInt("userFound");
+            }
+
+            if(userExists == 0){
+                return id;
+            }else if(userExists == 1) {
+                int[] intArray = {0,1,2,3,4,5,6,7,8,9};
+                String idx = String.valueOf(new Random().nextInt(intArray.length));
+                for(int i = 0; i<4; i++){
+                    idx = idx + new Random().nextInt(intArray.length);
+                }
+                String recommendedName = id+idx;
+                System.out.println("This username is already in use!");
+                System.out.println("try "+recommendedName);
+                System.out.println("Enter your username: ");
+                scanner.next();
+            }
+            exists = false;
+        }
+        return id;
     }
 
     public static double checkMoney(Scanner scanner, String message){

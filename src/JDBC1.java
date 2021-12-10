@@ -78,36 +78,6 @@ public class JDBC1 {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your username: ");
         String usern = checkIdTaken(scanner);
-//        boolean idTaken = true;
-//        String temp;
-//
-//        while (idTaken) {
-//            temp = scanner.next();
-//
-//            String sql1 = "SELECT * FROM user1 WHERE user_id = '"+temp+"';";
-//            Statement statement = connection.createStatement();
-//            ResultSet resultSet1 = statement.executeQuery(sql1);
-//
-//            if(resultSet1.next()){
-//                System.out.println("This username is already in use!");
-//                System.out.println("Enter your username: ");
-//                    //System.out.println("Welcome "+resultSet1.getString("user_id"));
-//            }
-//
-//                if(!temp.contains("@")){
-//
-//                }
-//                usern = scanner.next();
-//
-//            }else{
-//                System.out.println("This username is already in use!");
-//                System.out.println("Enter your username: ");
-//                scanner.next();
-//                continue;
-//            }
-//            idTaken = false;
-//        }
-
         System.out.println("Enter your email: ");
         String email = scanner.next();
         System.out.println("Enter your password: ");
@@ -118,25 +88,14 @@ public class JDBC1 {
         System.out.println("Enter your last name: ");
         String lastn = scanner.next();
         System.out.println("Enter your phone number: ");
-
-        long phonenum = 0;
-        boolean notnum = true;
-        while (notnum) {
-            if (scanner.hasNextLong())
-                phonenum = scanner.nextLong();
-            else {
-                System.out.println("Please enter a 10 digit number!");
-                System.out.println("Enter your phone number: ");
-                scanner.next();
-                continue;
-            }
-            notnum = false;
-        }
+        long phonenum = checkLong(scanner,"Enter your phone number: " );
 
         String sql2 = "INSERT INTO project.user(user_id, email, password, first_name, last_name, phone_number) VALUES" + " ('"+usern+"', '"+email+"', '"+password+"', '"+firstn+"', '"+lastn+"', '"+phonenum+"');";
 
         Statement statement1 = connection.createStatement();
         statement1.executeUpdate(sql2);
+
+        userActions();
     }
 
     public static void logIn() throws SQLException{
@@ -454,8 +413,10 @@ public class JDBC1 {
         String id = "";
         int userExists = 0;
         boolean exists = true;
-        while(exists){
-            id = scanner.nextLine();
+        while(exists) {
+            if (scanner.hasNext()) {
+                id = scanner.next();
+            }
             String sql = "SELECT count(*) AS userFound FROM project.user WHERE user_id = '"+id+"';";
             Statement statement = connection.createStatement();
             ResultSet result = statement.executeQuery(sql);
@@ -466,6 +427,7 @@ public class JDBC1 {
 
             if(userExists == 0){
                 return id;
+
             }else if(userExists == 1) {
                 int[] intArray = {0,1,2,3,4,5,6,7,8,9};
                 String idx = String.valueOf(new Random().nextInt(intArray.length));
@@ -476,7 +438,7 @@ public class JDBC1 {
                 System.out.println("This username is already in use!");
                 System.out.println("try "+recommendedName);
                 System.out.println("Enter your username: ");
-                scanner.next();
+                continue;
             }
             exists = false;
         }
@@ -524,8 +486,8 @@ public class JDBC1 {
             if (scanner.hasNextLong())
                 phonenum = scanner.nextLong();
             else {
-                System.out.println("Please enter a 10 digit number!");
-                System.out.println("Enter your phone number: ");
+                System.out.println("Please enter a valid number!");
+                System.out.println(message);
                 scanner.next();
                 continue;
             }
@@ -702,15 +664,13 @@ public class JDBC1 {
             String s1 = scanner.next();
             if(s1.equals("i")){
                 System.out.println("Enter ISBN");
-                scanner.nextLine();
-                String scan = scanner.nextLine();
-                long ISBN = Long.parseLong(scan);
+                long ISBN = checkLong(scanner,"Enter ISBN");
 
-                String sql = "Select * FROM project.book WHERE ISBN ='%"+ISBN+"%';";
+                String sql = "Select * FROM project.book WHERE ISBN ='"+ISBN+"';";
                 Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql);
+                System.out.println("Search Results: ");
                 while (result.next()){
-                    System.out.println("Search Results: ");
                     System.out.println("ISBN: "+ result.getLong("ISBN") + " \t Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " Costs: "+ result.getInt("sell_price"));
 
                 }
@@ -726,8 +686,8 @@ public class JDBC1 {
                 String sql = "Select * FROM project.book WHERE title ILIKE'%"+title+"%';";
                 Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql);
+                System.out.println("Search Results: ");
                 while (result.next()){
-                    System.out.println("Search Results: ");
                     System.out.println("ISBN: "+ result.getLong("ISBN") + " \t Title: " + result.getString("Title") + " \t Genre: "+result.getString("genre") + " \t Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " \t Costs: "+ result.getInt("sell_price"));
 
                 }
@@ -741,8 +701,8 @@ public class JDBC1 {
                 String sql = "Select * FROM project.book WHERE author_lastn ILIKE'%"+author+"%';";
                 Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql);
+                System.out.println("Search Results: ");
                 while (result.next()){
-                    System.out.println("Search Results: ");
                     System.out.println("ISBN: "+ result.getLong("ISBN") + " \t Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " Costs: "+ result.getInt("sell_price"));
 
                 }
@@ -756,8 +716,8 @@ public class JDBC1 {
                 String sql = "Select * FROM project.book WHERE genre ILIKE'%"+genre+"%';";
                 Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql);
+                System.out.println("Search Results: ");
                 while (result.next()){
-                    System.out.println("Search Results: ");
                     System.out.println("ISBN: "+ result.getLong("ISBN") + " Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " Costs: "+ result.getInt("sell_price"));
 
                 }

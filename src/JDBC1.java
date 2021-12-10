@@ -20,57 +20,58 @@ public class JDBC1 {
     }
 
     public static void main(String[] args) throws SQLException {
-
-        try {
-            System.out.println("Welcome to The Book Store!");
-            System.out.println();
-            System.out.println("type r to register an account");
-            System.out.println("type l to login to your account");
-            System.out.println("type h for more help");
-            System.out.println();
-
-            Scanner scanner = new Scanner(System.in);
-
-            while (scanner.hasNext()){
-                String s1 = scanner.next();
-                //exits the program if you write exit
-                if(s1.equals("exit")) {
-                    System.exit(0);
-
-                }else if(s1.equals("r")){
-                    registerAccount();
-                }else if(s1.equals("l")){
-                    logIn();
-                }else if(s1.equals("h")){
-                    System.out.println("h : help");
-                    System.out.println("r : register");
-                    System.out.println("s : search");
-                    System.out.println("cart: view cart");
-                    System.out.println("checkout : buy items in cart");
-                    System.out.println();
-                }
-            }
-            String email;
-            email = scanner.nextLine();
-            String pass;
-            System.out.println("Enter your password:");
-            pass = scanner.nextLine();
-            String sql = "SELECT * FROM project.user WHERE email = '"+email+"' AND "+"password = '"+pass+"';";
-
-            Statement statement = connection.createStatement();
-
-            ResultSet resultSet1 = statement.executeQuery(sql);
-
-            while(resultSet1.next()){
-                System.out.println("Welcome "+resultSet1.getString("user_id"));
-            }
-
-            connection.close();
-
-        }catch (SQLException e){
-            System.out.println("Connection error to PostgreSQL server");
-            e.printStackTrace();
-        }
+        addBook();
+//
+//        try {
+//            System.out.println("Welcome to The Book Store!");
+//            System.out.println();
+//            System.out.println("type r to register an account");
+//            System.out.println("type l to login to your account");
+//            System.out.println("type h for more help");
+//            System.out.println();
+//
+//            Scanner scanner = new Scanner(System.in);
+//
+//            while (scanner.hasNext()){
+//                String s1 = scanner.next();
+//                //exits the program if you write exit
+//                if(s1.equals("exit")) {
+//                    System.exit(0);
+//
+//                }else if(s1.equals("r")){
+//                    registerAccount();
+//                }else if(s1.equals("l")){
+//                    logIn();
+//                }else if(s1.equals("h")){
+//                    System.out.println("h : help");
+//                    System.out.println("r : register");
+//                    System.out.println("s : search");
+//                    System.out.println("cart: view cart");
+//                    System.out.println("checkout : buy items in cart");
+//                    System.out.println();
+//                }
+//            }
+//            String email;
+//            email = scanner.nextLine();
+//            String pass;
+//            System.out.println("Enter your password:");
+//            pass = scanner.nextLine();
+//            String sql = "SELECT * FROM project.user WHERE email = '"+email+"' AND "+"password = '"+pass+"';";
+//
+//            Statement statement = connection.createStatement();
+//
+//            ResultSet resultSet1 = statement.executeQuery(sql);
+//
+//            while(resultSet1.next()){
+//                System.out.println("Welcome "+resultSet1.getString("user_id"));
+//            }
+//
+//            connection.close();
+//
+//        }catch (SQLException e){
+//            System.out.println("Connection error to PostgreSQL server");
+//            e.printStackTrace();
+//        }
 
     }
 
@@ -227,13 +228,11 @@ public class JDBC1 {
         statement = connection.createStatement();
         result = statement.executeQuery(sql);
         while (result.next()){
-            System.out.println("ISBN: "+ result.getLong("ISBN") + " Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " In Stock: "+ result.getInt("inventory") + " Copies Sold: "+ result.getInt("sales"));
+            System.out.println("ISBN: "+ result.getLong("ISBN") + " \t Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " In Stock: "+ result.getInt("inventory") + " Copies Sold: "+ result.getInt("sales"));
         }
 
-
-
-
     }
+
     public static void addBook() throws SQLException{
         Scanner scanner = new Scanner(System.in);
 //        System.out.println("Enter publisher name: ");
@@ -272,7 +271,7 @@ public class JDBC1 {
             System.out.println("Enter genre: ");
             String genre = scanner.next();
             System.out.println("Enter number of pages: ");
-            int page_number = page_number = checkQuantity(scanner, "Enter number of pages: ");
+            int page_number = checkQuantity(scanner, "Enter number of pages: ");
 
             System.out.println("Enter total price: ");
             double total_price = checkMoney(scanner, "Enter total price: ");
@@ -288,11 +287,108 @@ public class JDBC1 {
 
             Statement insertBook = connection.createStatement();
             insertBook.executeUpdate(sql2);
+
+            linkPublisher(isbn);
         }
     }
 
-    public static void linkPublisher(){
+    public static void linkPublisher(String isbn) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter publisher name: ");
+        String publisher = scanner.nextLine();
 
+        System.out.println("Enter year published for book: ");
+        int year = checkQuantity(scanner,"Enter year published for book: ");
+
+        String sql = "SELECT publisher_name, count(*) AS publisher_exist FROM project.publisher WHERE " +
+                     "publisher_name ILIKE '"+publisher+"' GROUP BY publisher_name;";
+        Statement findPublisher = connection.createStatement();
+        ResultSet matchPublisher = findPublisher.executeQuery(sql);
+
+        int inPublisher = 0;
+        while(matchPublisher.next()){
+            inPublisher = Integer.parseInt(matchPublisher.getString("publisher_exist"));
+            publisher = matchPublisher.getString("publisher_name"); //if the publisher name was entered in lower case, this is corrected here.
+        }
+        if(inPublisher == 1) {
+            System.out.println("Publisher already exists as a publisher");
+            System.out.println("Book is now linked to an existing publisher");
+
+            String sql1 = "INSERT INTO project.publishes(isbn, publisher_name, year) values " +
+                    " ('"+isbn+"', '"+publisher+"', '"+year+"');";
+
+            Statement linkPublisherToBook = connection.createStatement();
+            linkPublisherToBook.executeUpdate(sql1);
+
+        }else{ //Else, if the publisher does not exist in the publisher relation, then add publisher and link to book through publishes.
+            System.out.println("Enter publisher's email: ");
+            String email = scanner.next();
+
+            System.out.println("Enter publisher's phone number: ");
+            long phone_num = checkLong(scanner,"Enter publisher's phone number: ");
+
+            String sql2 = "INSERT INTO project.publisher(publisher_name, email, phone_number) values " +
+                    " ('"+publisher+"', '"+email+"', '"+phone_num+"');";
+
+            Statement insertPublisher= connection.createStatement();
+            insertPublisher.executeUpdate(sql2);
+
+            //book is linked to publisher
+            String sql3 = "INSERT INTO project.publishes(isbn, publisher_name, year) values " +
+                    " ('"+isbn+"', '"+publisher+"', '"+year+"');";
+
+            Statement linkPublisherToBook = connection.createStatement();
+            linkPublisherToBook.executeUpdate(sql3);
+
+            createAndLinkPublisherAddress(publisher);
+        }
+    }
+
+    //function that creates the address and links it to cart
+    public static void createAndLinkPublisherAddress(String publisher_name) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter street number: ");
+        int street_num = checkQuantity(scanner, "Enter street number: ");
+        System.out.println("Enter street name: ");
+        scanner.nextLine();
+        String street_name = scanner.nextLine();
+        System.out.println("Enter apartment (number or letter): ");
+        String apartment = scanner.nextLine();
+        System.out.println("Enter city name:");
+        String city = scanner.next();
+        System.out.println("Enter province name: ");
+        String province = scanner.next();
+        System.out.println("Enter country name: ");
+        scanner.nextLine();
+        String country = scanner.nextLine();
+        System.out.println("Enter postal code: ");
+        String postal = scanner.next();
+
+        String sql = "INSERT INTO project.address(street_num, street_name, apartment, city, province, country, postal_code) VALUES" +
+                                            " ('"+street_num+"', '"+street_name+"', '"+apartment+"', '"+city+"', '"+province+"', '"+country+"', '"+postal+"');";
+
+
+        Statement statement1 = connection.createStatement();
+        statement1.executeUpdate(sql);
+
+        //looks up the address that we just added and finds the address_id
+        String sql2 = "SELECT * FROM project.address WHERE street_name = '"+street_name+"' AND street_num = '"+street_num+"' AND apartment = '"+apartment+"';";
+        Statement findAddress = connection.createStatement();
+        ResultSet matchAddress = findAddress.executeQuery(sql2);
+        int address_id = 0;
+        while(matchAddress.next()){
+            address_id = Integer.parseInt(matchAddress.getString("address_id"));
+        }
+
+        //Adds the link between publisher and publisher address
+        String sql3 = "INSERT INTO project.publisherAddress(publisher_name, address_id) values " +
+                " ('"+publisher_name+"', '"+address_id+"');";
+
+        Statement linkPublisherToBook = connection.createStatement();
+        linkPublisherToBook.executeUpdate(sql3);
+
+        System.out.println("Publisher has been added to the system");
+        System.out.println("Book is now linked to publisher");
     }
 
     public static double checkMoney(Scanner scanner, String message){
@@ -327,6 +423,23 @@ public class JDBC1 {
             notnum = false;
         }
         return quantity;
+    }
+
+    public static long checkLong(Scanner scanner, String message){
+        long phonenum = 0;
+        boolean notnum = true;
+        while (notnum) {
+            if (scanner.hasNextLong())
+                phonenum = scanner.nextLong();
+            else {
+                System.out.println("Please enter a 10 digit number!");
+                System.out.println("Enter your phone number: ");
+                scanner.next();
+                continue;
+            }
+            notnum = false;
+        }
+        return phonenum;
     }
 
     public static void removeBook() throws SQLException{
@@ -391,7 +504,7 @@ public class JDBC1 {
                 ResultSet result = statement.executeQuery(sql);
                 while (result.next()){
                     System.out.println("Search Results: ");
-                    System.out.println("ISBN: "+ result.getLong("ISBN") + " Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " Costs: "+ result.getInt("sell_price"));
+                    System.out.println("ISBN: "+ result.getLong("ISBN") + " \t Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " Costs: "+ result.getInt("sell_price"));
 
                 }
             }
@@ -408,7 +521,7 @@ public class JDBC1 {
                 ResultSet result = statement.executeQuery(sql);
                 while (result.next()){
                     System.out.println("Search Results: ");
-                    System.out.println("ISBN: "+ result.getLong("ISBN") + " Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " Costs: "+ result.getInt("sell_price"));
+                    System.out.println("ISBN: "+ result.getLong("ISBN") + " \t Title: " + result.getString("Title") + " \t Genre: "+result.getString("genre") + " \t Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " \t Costs: "+ result.getInt("sell_price"));
 
                 }
             }
@@ -423,7 +536,7 @@ public class JDBC1 {
                 ResultSet result = statement.executeQuery(sql);
                 while (result.next()){
                     System.out.println("Search Results: ");
-                    System.out.println("ISBN: "+ result.getLong("ISBN") + " Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " Costs: "+ result.getInt("sell_price"));
+                    System.out.println("ISBN: "+ result.getLong("ISBN") + " \t Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " Costs: "+ result.getInt("sell_price"));
 
                 }
             }

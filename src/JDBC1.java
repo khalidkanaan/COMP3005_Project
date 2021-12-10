@@ -233,11 +233,9 @@ public class JDBC1 {
 
     public static void addBook() throws SQLException{
         Scanner scanner = new Scanner(System.in);
-//        System.out.println("Enter publisher name: ");
-//        String pubName = scanner.next();
 
         System.out.println("Enter book ISBN: ");
-        String isbn = scanner.next();
+        Long isbn = checkLong(scanner, "Enter book ISBN: ");
 
         String sql = "SELECT count(*) AS book_in_library FROM project.book WHERE isbn = '"+isbn+"';";
         Statement findIsbn = connection.createStatement();
@@ -256,6 +254,8 @@ public class JDBC1 {
 
             Statement increaseStock = connection.createStatement();
             increaseStock.executeUpdate(sql1);
+
+            transferMoney(stock_increase, isbn);
 
         }else{
             System.out.println("Enter book name: ");
@@ -287,10 +287,45 @@ public class JDBC1 {
             insertBook.executeUpdate(sql2);
 
             linkPublisher(isbn);
+            transferMoney(stock, isbn);
         }
     }
 
-    public static void linkPublisher(String isbn) throws SQLException {
+
+    public static void transferMoney(int stock_increase, long isbn) throws SQLException {
+
+        //Find the publisher fee of the book through its isbn primary key
+        String sql = "SELECT publisher_fee FROM project.book WHERE isbn = '"+isbn+"';";
+        Statement get_fee = connection.createStatement();
+        ResultSet fee = get_fee.executeQuery(sql);
+        double fee_amount = 0;
+        while(fee.next()){
+            fee_amount = fee.getDouble("publisher_fee");
+        }
+        double total = fee_amount * stock_increase;
+
+        //Find the publisher of that specific book
+        String sql1 = "SELECT publisher_name FROM project.publishes WHERE isbn = '"+isbn+"';";
+        Statement getPublisher = connection.createStatement();
+        ResultSet publisherResult = getPublisher.executeQuery(sql1);
+        String publisher_name = "";
+        while(publisherResult.next()){
+            publisher_name = publisherResult.getString("publisher_name");
+        }
+
+        //Add the amount calculated to the publisher.
+        String sql2 = "UPDATE project.publisher SET bank_account = bank_account + '"+total+"' WHERE publisher_name = '"+publisher_name+"';";
+        Statement addToBankAccount = connection.createStatement();
+        addToBankAccount.executeUpdate(sql2);
+
+        //deduct the same amount calculated from the owner.
+        String sql3 = "UPDATE project.owner SET expenditure = expenditure - '"+total+"' WHERE user_id ='admin';";
+        Statement deductFromExpenditure = connection.createStatement();
+        deductFromExpenditure.executeUpdate(sql3);
+    }
+
+
+    public static void linkPublisher(Long isbn) throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter publisher name: ");
         String publisher = scanner.nextLine();
@@ -441,7 +476,44 @@ public class JDBC1 {
     }
 
     public static void removeBook() throws SQLException{
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter book ISBN: ");
+        String isbn = scanner.next();
+        int before=0;
+        int after=0;
 
+        String sql= "Select count () AS totalBooks FROM project.book;";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        while (result.next()){
+            before = result.getInt("totalBooks");
+        }
+        if(before ==0){
+            System.out.println("No books to remove.");
+            return;
+        }
+
+        sql = "DELETE FROM project.publishes WHERE isbn = '"+isbn+"';";
+        Statement statement1 = connection.createStatement();
+        statement1.executeUpdate(sql);
+
+
+        sql = "DELETE FROM project.book WHERE isbn = '"+isbn+"';";
+        Statement statement2 = connection.createStatement();
+        statement2.executeUpdate(sql);
+
+        sql= "Select count () AS totalBooks FROM project.book;";
+        Statement statement3 = connection.createStatement();
+        ResultSet result2 = statement3.executeQuery(sql);
+        while (result2.next()){
+            after = result2.getInt("totalBooks");
+        }
+
+        if (before > after){
+            System.out.println("Book Removed Succesfully!");
+        }else{
+            System.out.println(("Failed to remove Book!"));
+        }
     }
     public static void salesCheck() throws SQLException{
 

@@ -689,6 +689,7 @@ public class JDBC1 {
         System.out.println("type s to search for a book");
         System.out.println("type a to add a book to your cart");
         System.out.println("type r to remove from your cart");
+        System.out.println("type v to view your cart");
         System.out.println("type c to checkout");
         System.out.println("type h for more help");
         Scanner scanner = new Scanner(System.in);
@@ -705,6 +706,8 @@ public class JDBC1 {
                 addToCart();
             }else if(s1.equals("r")){
                 removeCart();
+            }else if(s1.equals("v")) {
+                viewUserCart();
             }else if(s1.equals("c")) {
                 checkout();
             }else if(s1.equals("h")){
@@ -945,6 +948,60 @@ public class JDBC1 {
             }
         }
 
+    }
+
+    public static void viewUserCart() throws SQLException{
+        String sql = "SELECT cart_id FROM project.userCart WHERE user_id = '"+Login+"';";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        String cart_id = "";
+        while(result.next()){
+            cart_id = result.getString("cart_id");
+        }
+        String sql1 = "SELECT isbn, quantity, title, sell_price FROM project.cartItem NATURAL JOIN project.book WHERE cart_id = '"+cart_id+"';";
+        Statement statement1 = connection.createStatement();
+        ResultSet result1 = statement1.executeQuery(sql1);
+        long isbn = 0;
+        int quantity = 0;
+        String title = "";
+        double sell_price = 0;
+        int count = 0;
+        double total_per_book = 0;
+        double total_cart_value = 0;
+
+        System.out.println("Your cart");
+        while(result1.next()){
+            count++;
+            isbn = result1.getLong("isbn");
+            quantity = result1.getInt("quantity");
+            title = result1.getString("title");
+            sell_price = result1.getDouble("sell_price");
+            total_per_book = sell_price * quantity;
+            total_cart_value+=total_per_book;
+
+            System.out.println("Item "+count+": ISBN: "+isbn+" Title: "+title+" Quantity: "+quantity+" price/book: "+sell_price+" Total price: "+total_per_book);
+        }
+        System.out.println("Overall price: "+total_cart_value);
+
+
+        System.out.println("\ntype m to access menu");
+        System.out.println("type a to add a book");
+        System.out.println("type r to remove a book");
+        System.out.println("type c to checkout");
+
+        Scanner scanner = new Scanner(System.in);
+        while(scanner.hasNext()){
+            String str = scanner.next();
+            if (str.equals("m")){
+                userActions();
+            }else if (str.equals("a")){
+                addToCart();
+            }else if (str.equals("r")) {
+                removeCart();
+            }else if (str.equals("c")) {
+                checkout();
+            }
+        }
     }
     public static void checkout() throws SQLException{
 

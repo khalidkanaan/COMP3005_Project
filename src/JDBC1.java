@@ -134,6 +134,7 @@ public class JDBC1 {
         if (result.next()){
             ownerActions();
         }else{
+            System.out.println("Welcome to Look Inna Book");
             userActions();
         }
 
@@ -360,7 +361,8 @@ public class JDBC1 {
             createAndLinkPublisherAddress(publisher);
         }
     }
-    public static void createAndLinkUserAddress(String user_id) throws SQLException {
+
+    public static void createUserAddress() throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your street number: ");
         int street_num = checkQuantity(scanner, "Enter your street number: ");
@@ -386,14 +388,20 @@ public class JDBC1 {
 
         Statement statement1 = connection.createStatement();
         statement1.executeUpdate(sql);
+    }
+
+    public static void createAndLinkUserAddress(String user_id) throws SQLException {
+        //calls the function that creates the address
+        createUserAddress();
 
         //looks up the address that we just added and finds the address_id
-        String sql2 = "SELECT * FROM project.address WHERE street_name = '"+street_name+"' AND street_num = '"+street_num+"' AND apartment = '"+apartment+"';";
+        String sql2 = "SELECT currval('project.address_address_id_seq'::regclass);";
         Statement findAddress = connection.createStatement();
         ResultSet matchAddress = findAddress.executeQuery(sql2);
+
         int address_id = 0;
         while(matchAddress.next()){
-            address_id = matchAddress.getInt("address_id");
+            address_id = matchAddress.getInt("currval");
         }
 
         //Adds the link between user and address
@@ -684,7 +692,6 @@ public class JDBC1 {
     }
 
     public static void userActions() throws SQLException{
-        System.out.println("Welcome to Look Inna Book");
         System.out.println("Options:");
         System.out.println("type s to search for a book");
         System.out.println("type a to add a book to your cart");
@@ -981,7 +988,9 @@ public class JDBC1 {
 
             System.out.println("Item "+count+": ISBN: "+isbn+" Title: "+title+" Quantity: "+quantity+" price/book: "+sell_price+" Total price: "+total_per_book);
         }
-        System.out.println("Overall price: "+total_cart_value);
+        System.out.println("Price Before Tax: "+total_cart_value);
+        System.out.println("GST: "+ total_cart_value * 0.13);
+        System.out.println("Overall Price: : "+ total_cart_value * 1.13);
 
 
         System.out.println("\ntype m to access menu");
@@ -1004,6 +1013,72 @@ public class JDBC1 {
         }
     }
     public static void checkout() throws SQLException{
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Are you sure you want to checkout?");
+
+        while(scanner.hasNext()){
+            String s1 = scanner.next();
+            if(s1.equals("yes") || s1.equals("y") || s1.equals("Yes") || s1.equals("Y")){
+                String sql = "SELECT street_num, street_name, apartment, city, province, country, postal_code FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"';";
+                Statement statement = connection.createStatement();
+                ResultSet result = statement.executeQuery(sql);
+                System.out.println("Your current address is: ");
+                String st_num = "";
+                String st_name = "";
+                String app = "";
+                String city = "";
+                String prov = "";
+                String ctry = "";
+                String postal = "";
+
+                while (result.next()){
+                    st_num = result.getString("street_num");
+                    st_name = result.getString("street_name");
+                    app = result.getString("apartment");
+                    city = result.getString("city");
+                    prov = result.getString("province");
+                    ctry = result.getString("country");
+                    postal = result.getString("postal_code");
+
+                    System.out.println("Street Number: "+st_num);
+                    System.out.println("Street Name: "+st_name);
+                    System.out.println("Apartment: "+app);
+                    System.out.println("City: "+city);
+                    System.out.println("Province: "+prov);
+                    System.out.println("Country: "+ctry);
+                    System.out.println("Postal Code: "+postal);
+                }
+                System.out.println("\nDo you want to use the same Address created at registration? (yes/no) ");
+                String s2 = scanner.next();
+                if(s2.equals("yes") || s2.equals("y") || s2.equals("Yes") || s2.equals("Y")){
+                    createOrder();
+                    return;
+
+                }else if(s2.equals("no") || s2.equals("n") || s2.equals("No") || s2.equals("N")){
+                    //continue from here
+                    createUserAddress();
+                    Scanner scanner1 = new Scanner(System.in);
+                    System.out.println("\nDo you want to make this shipping address your default shipping address? (yes/no) ");
+
+                    String s3 = scanner1.next();
+                    if(s3.equals("yes") || s3.equals("y") || s3.equals("Yes") || s3.equals("Y")){
+                        return;
+                    }else if(s3.equals("no") || s3.equals("n") || s3.equals("No") || s3.equals("N")){
+                        createOrder();
+                        return;
+                    }
+                }
+            }
+
+            if(s1.equals("no") || s1.equals("n") || s1.equals("No") || s1.equals("N")){
+                userActions();
+            }
+            break;
+        }
+
+    }
+
+    public static void createOrder() throws SQLException{
 
     }
 }

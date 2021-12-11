@@ -841,9 +841,71 @@ public class JDBC1 {
 
     }
     public static void removeCart() throws SQLException{
+        Scanner scanner =  new Scanner(System.in);
+        System.out.println("Enter ISBN Book you would like to Remove");
+        int quantity = 0;
+        long s = 0;
+        int cartID=0;
+        String title="";
 
-    }
-    public static void checkout() throws SQLException{
+        s = checkLong(scanner,"Enter ISBN Book you would like to Remove");
+
+        String sql = "SELECT * FROM project.book WHERE isbn ='"+s+"';";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        boolean exists= false;
+        while(result.next()){
+            title = result.getString("title");
+            System.out.println("removing Book: "+title);
+            exists = true;
+        }
+        System.out.println("How many copies would you like?");
+        quantity = checkQuantity(scanner,"How many copies would you like?");
+
+        if (exists){
+            int inCart =0;
+            String sql3 = "SELECT quantity FROM project.cartItem WHERE isbn ='"+s+"';";
+            Statement statement3 = connection.createStatement();
+            ResultSet result3 = statement3.executeQuery(sql);
+            while(result3.next()){
+                inCart = result3.getInt("quantity");
+            }
+
+            String sql1 = "SELECT cart_id FROM project.userAddress NATURAL JOIN project.cart WHERE user_id = '"+Login+"';";
+            Statement statement1 = connection.createStatement();
+            ResultSet result1 = statement1.executeQuery(sql1);
+
+            while (result1.next()){
+                cartID = result1.getInt("cart_id");
+            }
+
+            if(inCart <= quantity){
+                String sql2 = "DELETE FROM project.cartItem WHERE cart_id = '"+cartID+"'AND isbn = '"+s+"' AND quantity ='"+quantity+"';";
+                Statement statement2 = connection.createStatement();
+                statement2.executeUpdate(sql2);
+                System.out.println("Removed " + quantity+" copies of :" +title+ " from your cart.");
+            }else if(inCart > quantity){
+                String sql2 = "UPDATE project.cartItem SET quantity ='"+inCart+"'- '"+quantity+"'WHERE cart_id = '"+cartID+"'AND isbn = '"+s+"';";
+                Statement statement2 = connection.createStatement();
+                statement2.executeUpdate(sql2);
+                System.out.println("Removed " + quantity+" copies of :" +title+ " from your cart.");
+            }
+
+        }else{
+            System.out.println("That Book is in Cart");
+        }
+
+        System.out.println("\ntype m to access menu");
+        System.out.println("type b to go back");
+
+        while(scanner.hasNext()){
+            String str = scanner.next();
+            if (str.equals("m")){
+                userActions();
+            }else if (str.equals("b")){
+                findBook();
+            }
+        }
 
     }
 }

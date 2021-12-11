@@ -811,6 +811,7 @@ public class JDBC1 {
         int cartID=0;
         String title="";
 
+        boolean exists = false;
         s = checkLong(scanner,"Enter ISBN Book you would like to Add");
         String sql = "SELECT * FROM project.book WHERE isbn ='"+s+"';";
         Statement statement = connection.createStatement();
@@ -818,22 +819,44 @@ public class JDBC1 {
         while(result.next()){
             title = result.getString("title");
             System.out.println("adding Book: "+title);
+            exists = true;
 
         }
-        System.out.println("How many copies would you like?");
-        quantity = checkQuantity(scanner,"How many copies would you like?");
+        if(exists){
+            boolean inCart = false;
+            String sql3 = "SELECT * FROM project.cart WHERE isbn ='"+s+"';";
+            Statement statement3 = connection.createStatement();
+            ResultSet result3 = statement3.executeQuery(sql3);
+            while(result3.next()){
+                title = result.getString("title");
+                inCart = true;
 
-        String sql1 = "SELECT cart_id FROM project.userAddress NATURAL JOIN project.cart WHERE user_id = '"+Login+"';";
-        Statement statement1 = connection.createStatement();
-        ResultSet result1 = statement1.executeQuery(sql1);
+            }
+            System.out.println("How many copies would you like?");
+            quantity = checkQuantity(scanner,"How many copies would you like?");
 
-        while (result1.next()){
-            cartID = result1.getInt("cart_id");
+            if (inCart){
+                String sql1 = "UPDATE project.cartItem SET quantity = quantity + '"+quantity+"' WHERE cart_id = '"+cartID+"'AND isbn = '"+s+"';";
+                Statement statement1 = connection.createStatement();
+                ResultSet result1 = statement1.executeQuery(sql1);
+            }else{
+                String sql1 = "SELECT cart_id FROM project.userAddress NATURAL JOIN project.cart WHERE user_id = '"+Login+"';";
+                Statement statement1 = connection.createStatement();
+                ResultSet result1 = statement1.executeQuery(sql1);
+
+                while (result1.next()){
+                    cartID = result1.getInt("cart_id");
+                }
+                String sql2 = "INSERT INTO project.cartItem(cart_id,isbn,quantity) VALUES ('"+cartID+"','"+s+"','"+quantity+"');";
+                Statement statement2 = connection.createStatement();
+                statement2.executeUpdate(sql2);
+                System.out.println("Added " + quantity+" copies of :" +title+ " to your cart.");
+            }
+
+        }else{
+            System.out.println("Book is not available at this store. Sorry :(");
         }
-        String sql2 = "INSERT INTO project.cartItem(cart_id,isbn,quantity) VALUES ('"+cartID+"','"+s+"','"+quantity+"');";
-        Statement statement2 = connection.createStatement();
-        statement2.executeUpdate(sql2);
-        System.out.println("Added " + quantity+" copies of :" +title+ " to your cart.");
+
 
         System.out.println("\ntype m to access menu");
         System.out.println("type b to go back");

@@ -985,7 +985,7 @@ public class JDBC1 {
         double total_per_book = 0;
         double total_cart_value = 0;
 
-        System.out.println("Your cart");
+        System.out.println("Your cart: ");
         while(result1.next()){
             count++;
             isbn = result1.getLong("isbn");
@@ -995,11 +995,11 @@ public class JDBC1 {
             total_per_book = sell_price * quantity;
             total_cart_value+=total_per_book;
 
-            System.out.println("Item "+count+": ISBN: "+isbn+" Title: "+title+" Quantity: "+quantity+" price/book: "+sell_price+" Total price: "+total_per_book);
+            System.out.println("Item "+count+": ISBN: "+isbn+" Title: "+title+" Quantity: "+quantity+" price/book: $"+sell_price+" Total price: $"+total_per_book);
         }
-        System.out.println("Price Before Tax: "+total_cart_value);
-        System.out.println("GST: "+ Math.round(total_cart_value*0.13*100.0)/100.0);
-        System.out.println("Overall Price: : "+ Math.round(total_cart_value*1.13*100.0)/100.0);
+        System.out.println("Price Before Tax: $"+total_cart_value);
+        System.out.println("GST: $"+ Math.round(total_cart_value*0.13*100.0)/100.0);
+        System.out.println("Overall Price: : $"+ Math.round(total_cart_value*1.13*100.0)/100.0);
 
 
         System.out.println("\ntype m to access menu");
@@ -1021,68 +1021,104 @@ public class JDBC1 {
             }
         }
     }
+
+    public static boolean cartEmpty() throws SQLException {
+        String sql = "SELECT cart_id FROM project.userCart WHERE user_id = '"+Login+"';";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        String cart_id = "";
+        while(result.next()){
+            cart_id = result.getString("cart_id");
+        }
+
+        String sql1 = "SELECT count(*) FROM project.cartItem WHERE cart_id = '"+cart_id+"';";
+        Statement statement1 = connection.createStatement();
+        ResultSet result1 = statement1.executeQuery(sql1);
+        int count = 0;
+        while(result1.next()){
+            count = result1.getInt("count");
+        }
+        if (count == 0){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
     public static void checkout() throws SQLException{
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Are you sure you want to checkout?");
 
-        while(scanner.hasNext()){
-            String s1 = scanner.next();
-            if(s1.equals("yes") || s1.equals("y") || s1.equals("Yes") || s1.equals("Y")){
-                String sql = "SELECT street_num, street_name, apartment, city, province, country, postal_code FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"';";
-                Statement statement = connection.createStatement();
-                ResultSet result = statement.executeQuery(sql);
-                System.out.println("Your current address is: ");
-                String st_num = "";
-                String st_name = "";
-                String app = "";
-                String city = "";
-                String prov = "";
-                String ctry = "";
-                String postal = "";
+        if(!cartEmpty()){
+            System.out.println("Are you sure you want to checkout?");
 
-                while (result.next()){
-                    st_num = result.getString("street_num");
-                    st_name = result.getString("street_name");
-                    app = result.getString("apartment");
-                    city = result.getString("city");
-                    prov = result.getString("province");
-                    ctry = result.getString("country");
-                    postal = result.getString("postal_code");
+            while(scanner.hasNext()){
+                String s1 = scanner.next();
+                if(s1.equals("yes") || s1.equals("y") || s1.equals("Yes") || s1.equals("Y")){
+                    String sql = "SELECT street_num, street_name, apartment, city, province, country, postal_code FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"';";
+                    Statement statement = connection.createStatement();
+                    ResultSet result = statement.executeQuery(sql);
+                    System.out.println("Your current address is: ");
+                    String st_num = "";
+                    String st_name = "";
+                    String app = "";
+                    String city = "";
+                    String prov = "";
+                    String ctry = "";
+                    String postal = "";
 
-                    System.out.println("Street Number: "+st_num);
-                    System.out.println("Street Name: "+st_name);
-                    System.out.println("Apartment: "+app);
-                    System.out.println("City: "+city);
-                    System.out.println("Province: "+prov);
-                    System.out.println("Country: "+ctry);
-                    System.out.println("Postal Code: "+postal);
-                }
-                System.out.println("\nDo you want to use the same Address created at registration? (yes/no) ");
-                String s2 = scanner.next();
-                if(s2.equals("yes") || s2.equals("y") || s2.equals("Yes") || s2.equals("Y")){
-                    createOrder();
-                    return;
+                    while (result.next()){
+                        st_num = result.getString("street_num");
+                        st_name = result.getString("street_name");
+                        app = result.getString("apartment");
+                        city = result.getString("city");
+                        prov = result.getString("province");
+                        ctry = result.getString("country");
+                        postal = result.getString("postal_code");
 
-                }else if(s2.equals("no") || s2.equals("n") || s2.equals("No") || s2.equals("N")){
-                    //continue from here
-                    createUserAddress();
-                    Scanner scanner1 = new Scanner(System.in);
-                    System.out.println("\nDo you want to make this shipping address your default shipping address? (yes/no) ");
-
-                    String s3 = scanner1.next();
-                    if(s3.equals("yes") || s3.equals("y") || s3.equals("Yes") || s3.equals("Y")){
-                        return;
-                    }else if(s3.equals("no") || s3.equals("n") || s3.equals("No") || s3.equals("N")){
+                        System.out.println("Street Number: "+st_num);
+                        System.out.println("Street Name: "+st_name);
+                        System.out.println("Apartment: "+app);
+                        System.out.println("City: "+city);
+                        System.out.println("Province: "+prov);
+                        System.out.println("Country: "+ctry);
+                        System.out.println("Postal Code: "+postal);
+                    }
+                    System.out.println("\nDo you want to use the same Address created at registration? (yes/no) ");
+                    String s2 = scanner.next();
+                    if(s2.equals("yes") || s2.equals("y") || s2.equals("Yes") || s2.equals("Y")){
                         createOrder();
                         return;
+
+                    }else if(s2.equals("no") || s2.equals("n") || s2.equals("No") || s2.equals("N")){
+                        //continue from here
+                        createUserAddress();
+                        Scanner scanner1 = new Scanner(System.in);
+                        System.out.println("\nDo you want to make this shipping address your default shipping address? (yes/no) ");
+
+                        String s3 = scanner1.next();
+                        if(s3.equals("yes") || s3.equals("y") || s3.equals("Yes") || s3.equals("Y")){
+                            return;
+                        }else if(s3.equals("no") || s3.equals("n") || s3.equals("No") || s3.equals("N")){
+                            createOrder();
+                            return;
+                        }
                     }
                 }
-            }
 
-            if(s1.equals("no") || s1.equals("n") || s1.equals("No") || s1.equals("N")){
-                userActions();
+                if(s1.equals("no") || s1.equals("n") || s1.equals("No") || s1.equals("N")){
+                    userActions();
+                }
+                break;
             }
-            break;
+        }else{
+            System.out.println("Your cart is empty.");
+            System.out.println("Type m to return to menu");
+            while(scanner.hasNext()){
+                String s = scanner.next();
+                if (s.equals("m")){
+                    userActions();
+                }
+            }
         }
 
     }

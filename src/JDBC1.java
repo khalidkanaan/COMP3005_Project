@@ -140,6 +140,24 @@ public class JDBC1 {
 
     }
 
+    public static void displayBooks() throws SQLException {
+        System.out.println("\nInventory:");
+        String sql= "Select count (*) AS totalBooks FROM project.book;";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        while (result.next()){
+            System.out.println("Different Books: "+ result.getString("totalBooks"));
+        }
+
+        sql = "Select * FROM project.book;";
+        statement = connection.createStatement();
+        result = statement.executeQuery(sql);
+        while (result.next()){
+            System.out.println("ISBN: "+ result.getLong("ISBN") + " \t Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " In Stock: "+ result.getInt("inventory") + " Copies Sold: "+ result.getInt("sales"));
+        }
+        System.out.println();
+    }
+
     public static void ownerActions() throws SQLException{
         System.out.println("You have Accessed Owner portal");
         System.out.println("Options:");
@@ -178,20 +196,8 @@ public class JDBC1 {
     }
 
     public static void fullDisplay() throws SQLException{
-        System.out.println("Inventory:");
-        String sql= "Select count (*) AS totalBooks FROM project.book;";
-        Statement statement = connection.createStatement();
-        ResultSet result = statement.executeQuery(sql);
-        while (result.next()){
-            System.out.println("Different Books: "+ result.getString("totalBooks"));
-        }
+        displayBooks();
 
-        sql = "Select * FROM project.book;";
-        statement = connection.createStatement();
-        result = statement.executeQuery(sql);
-        while (result.next()){
-            System.out.println("ISBN: "+ result.getLong("ISBN") + " \t Title: " + result.getString("Title") + " Genre: "+result.getString("genre") + " Author: " + result.getString("author_firstn")+" "+result.getString("author_lastn") + " In Stock: "+ result.getInt("inventory") + " Copies Sold: "+ result.getInt("sales"));
-        }
         Scanner scanner = new Scanner(System.in);
         System.out.println("\ntype m to access menu");
         System.out.println("type b to go back");
@@ -692,6 +698,9 @@ public class JDBC1 {
     }
 
     public static void userActions() throws SQLException{
+        //displays the books for the user;
+        displayBooks();
+
         System.out.println("Options:");
         System.out.println("type s to search for a book");
         System.out.println("type a to add a book to your cart");
@@ -989,8 +998,8 @@ public class JDBC1 {
             System.out.println("Item "+count+": ISBN: "+isbn+" Title: "+title+" Quantity: "+quantity+" price/book: "+sell_price+" Total price: "+total_per_book);
         }
         System.out.println("Price Before Tax: "+total_cart_value);
-        System.out.println("GST: "+ total_cart_value * 0.13);
-        System.out.println("Overall Price: : "+ total_cart_value * 1.13);
+        System.out.println("GST: "+ Math.round(total_cart_value*0.13*100.0)/100.0);
+        System.out.println("Overall Price: : "+ Math.round(total_cart_value*1.13*100.0)/100.0);
 
 
         System.out.println("\ntype m to access menu");

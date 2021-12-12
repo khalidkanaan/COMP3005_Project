@@ -34,38 +34,26 @@ public class JDBC1 {
             while (scanner.hasNext()){
                 String s1 = scanner.next();
                 //exits the program if you write exit
-                if(s1.equals("exit")) {
+                if(s1.equals("exit") || s1.equals("quit") || s1.equals("q")) {
                     System.exit(0);
 
                 }else if(s1.equals("r")){
                     registerAccount();
                 }else if(s1.equals("l")){
                     logIn();
-                }else if(s1.equals("h")){
-                    System.out.println("h : help");
+//                }else if(s1.equals("v")){
+//                    displayBooks();
+//                }else if(s1.equals("s")){
+//                    findBook();
+                } else if(s1.equals("h")) {
                     System.out.println("r : register");
-                    System.out.println("s : search");
-                    System.out.println("cart: view cart");
-                    System.out.println("checkout : buy items in cart");
-                    System.out.println();
+                    System.out.println("l : login");
+                    System.out.println("q : terminate program");
+//                    System.out.println("v : view books in store");
+//                    System.out.println("s : search for a book in store");
+//                    System.out.println();
                 }
             }
-            String email;
-            email = scanner.nextLine();
-            String pass;
-            System.out.println("Enter your password:");
-            pass = scanner.nextLine();
-            String sql = "SELECT * FROM project.user WHERE email = '"+email+"' AND "+"password = '"+pass+"';";
-
-            Statement statement = connection.createStatement();
-
-            ResultSet resultSet1 = statement.executeQuery(sql);
-
-            while(resultSet1.next()){
-                System.out.println("Welcome "+resultSet1.getString("user_id"));
-            }
-
-            connection.close();
 
         }catch (SQLException e){
             System.out.println("Connection error to PostgreSQL server");

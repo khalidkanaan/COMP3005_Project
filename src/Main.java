@@ -2,7 +2,7 @@ import java.sql.*;
 import java.util.Random;
 import java.util.Scanner;
 
-public class JDBC1 {
+public class Main {
     static String jdbcURL = "jdbc:postgresql://localhost:5432/postgres";
     static String username = "postgres";
     static String password = "0795";

@@ -694,6 +694,8 @@ public class JDBC1 {
         System.out.println("type a to add a book to your cart");
         System.out.println("type r to remove from your cart");
         System.out.println("type v to view your cart");
+        System.out.println("type o to view your order history");
+        System.out.println("type t to track your order");
         System.out.println("type c to checkout");
         System.out.println("type h for more help");
         Scanner scanner = new Scanner(System.in);
@@ -714,6 +716,10 @@ public class JDBC1 {
                 viewUserCart();
             }else if(s1.equals("c")) {
                 checkout();
+            }else if(s1.equals("o")) {
+                viewOrders();
+            }else if(s1.equals("t")) {
+                trackOrder();
             }else if(s1.equals("h")){
                 System.out.println("h : help");
                 System.out.println("r : register");
@@ -1071,7 +1077,7 @@ public class JDBC1 {
                         System.out.println("Country: "+ctry);
                         System.out.println("Postal Code: "+postal);
                     }
-                    System.out.println("\nDo you want to use the same Address created at registration? (yes/no) ");
+                    System.out.println("\nDo you want to use the same shipping address created at registration? (yes/no) ");
                     String s2 = scanner.next();
                     if(s2.equals("yes") || s2.equals("y") || s2.equals("Yes") || s2.equals("Y")){
                         createOrder();
@@ -1111,7 +1117,198 @@ public class JDBC1 {
 
     }
 
-    public static void createOrder() throws SQLException{
+    public static void updateShippingAddress(){
+    }
 
+    public static void createOrder() throws SQLException{
+        int[] intArray = {0,1,2,3,4,5,6,7,8,9};
+        String idx = String.valueOf(new Random().nextInt(intArray.length));
+        for(int i = 0; i < 8; i++){
+            idx = idx + new Random().nextInt(intArray.length);
+        }
+        String trackingNum = "CL"+idx+"CA";
+        System.out.println(trackingNum);
+        //CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA project;
+
+
+        //Find the address_id for the user shipping address
+        String sql = "SELECT address_id FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"' AND isShipping = true;";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        int address_id = 0;
+
+        while (result.next()){
+            address_id = result.getInt("address_id");
+        }
+
+        //Find the cart_id of the current user;
+        String sql1 = "SELECT cart_id FROM project.userCart WHERE user_id = '"+Login+"';";
+        Statement statement1 = connection.createStatement();
+        ResultSet result1 = statement1.executeQuery(sql1);
+        int cart_id = 0;
+        while(result1.next()){
+            cart_id = result1.getInt("cart_id");
+        }
+
+        //Finds all the cart items associated with the cart_id of the current user;
+        String sql2 = "SELECT isbn, quantity, title, sell_price FROM project.cartItem NATURAL JOIN project.book WHERE cart_id = '"+cart_id+"';";
+        Statement statement2 = connection.createStatement();
+        ResultSet result2 = statement2.executeQuery(sql2);
+        int quantity = 0;
+        double sell_price = 0;
+        double total_per_book = 0;
+        double total_cart_value = 0;
+
+        while(result2.next()){
+            quantity = result2.getInt("quantity");
+            sell_price = result2.getDouble("sell_price");
+            total_per_book = sell_price * quantity;
+            total_cart_value+=total_per_book;
+        }
+        total_cart_value = Math.round(total_cart_value*1.13*100.0)/100.0;
+
+        //generate a UUID and store it in a variable to be inserted into order
+        String sql3 = "SELECT uuid_generate_v4() AS order_id;";
+        Statement statement3 = connection.createStatement();
+        ResultSet result3 = statement3.executeQuery(sql3);
+        String order_id= "";
+
+        while (result3.next()){
+            order_id = result3.getString("order_id");
+        }
+
+        String sql4 = "INSERT INTO project.order(order_num, tracking_num, total_price) VALUES ('"+order_id+"', '"+trackingNum+"', '"+total_cart_value+"');";
+        Statement statement4 = connection.createStatement();
+        statement4.executeUpdate(sql4);
+
+        linkCheckoutToOrder(cart_id, order_id);
+        linkOrderToAddress(address_id, order_id);
+    }
+
+    public static void linkCheckoutToOrder(int cart_id, String uuid) throws SQLException {
+        String sql = "INSERT INTO project.checkout(cart_id, order_num) VALUES ('"+cart_id+"', '"+uuid+"');";
+        Statement statement = connection.createStatement();
+        statement.executeUpdate(sql);
+    }
+
+    public static void linkOrderToAddress(int address_id, String uuid) throws SQLException {
+        String sql = "INSERT INTO project.orderAddress(address_id, order_num) VALUES ('"+address_id+"', '"+uuid+"');";
+        Statement statement = connection.createStatement();
+        statement.executeUpdate(sql);
+    }
+
+    public static void viewOrders() throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        String sql = "SELECT order_num, tracking_num, order_date, carrier, total_price, A.address_id from project.order " +
+                     "NATURAL JOIN project.orderAddress A, project.userAddress B WHERE user_id = '"+Login+"' ORDER BY order_date DESC;";
+
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        String order_number = "";
+        String tracking_number = "";
+        String order_date = "";
+        String shipper = "";
+        double total_price = 0.00;
+        int address_id = 0;
+        System.out.println("\nOrders: ");
+        while(result.next()){
+            order_number = result.getString("order_num");
+            tracking_number = result.getString("tracking_num");
+            order_date = result.getString("order_date");
+            shipper = result.getString("carrier");
+            address_id = result.getInt("address_id");
+            total_price = result.getDouble("total_price");
+
+            System.out.println("\nOrder Number: "+order_number);
+            System.out.println("Tracking Number: "+tracking_number);
+            System.out.println("Date of Purchase: "+order_date);
+            System.out.println("Carrier: "+shipper);
+            System.out.println("Total: "+total_price);
+            System.out.println("Shipped to: "+getAddress(address_id));
+        }
+        System.out.println("------------------------------------------------------------------------------");
+        System.out.println("\ntype m to go back to user menu");
+        while(scanner.hasNext()){
+            String s = scanner.next();
+            if (s.equals("m")){
+                userActions();
+            }
+        }
+    }
+
+    public static void trackOrder() throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Please enter the tracking number of the order you would like to track");
+        String tracking_number = scanner.next();
+
+        String sql = "SELECT order_num, order_date, carrier, address_id from project.order NATURAL JOIN project.orderAddress WHERE tracking_num = '"+tracking_number+"';";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        String order_number = "";
+        String order_date = "";
+        String shipper = "";
+        int address_id = 0;
+        boolean empty = true;
+
+        while (result.next()){
+            order_number = result.getString("order_num");
+            order_date = result.getString("order_date");
+            shipper = result.getString("carrier");
+            address_id = result.getInt("address_id");
+
+            System.out.println("\nOrder Number: "+order_number);
+            System.out.println("Order On: "+order_date);
+            System.out.println("Carrier: "+shipper);
+            System.out.println("Shipped to: "+getAddress(address_id));
+
+            empty = false;
+        }
+
+        if(empty){
+            System.out.println("You have entered an invalid tracking number");
+            System.out.println("Check order history for tracking number");
+        }
+
+        System.out.println("\ntype o to view to your order history");
+        System.out.println("type t to track another order");
+        System.out.println("type m to go back to user menu");
+
+        while(scanner.hasNext()){
+            String s = scanner.next();
+            if (s.equals("o")){
+                viewOrders();
+            }else if(s.equals("t")){
+                trackOrder();
+            }else if(s.equals("m")){
+                userActions();
+            }
+        }
+    }
+
+    public static String getAddress(int address_id) throws SQLException {
+        String sql = "SELECT street_num, street_name, apartment, city, province, country, postal_code FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"';";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        String st_num = "";
+        String st_name = "";
+        String app = "";
+        String city = "";
+        String prov = "";
+        String ctry = "";
+        String postal = "";
+        String fullAddress = "";
+        while (result.next()){
+            st_num = result.getString("street_num");
+            st_name = result.getString("street_name");
+            app = result.getString("apartment");
+            city = result.getString("city");
+            prov = result.getString("province");
+            ctry = result.getString("country");
+            postal = result.getString("postal_code");
+
+            fullAddress = st_num +" "+ st_name +" "+ app +" "+ prov +" "+ city +" "+ prov +" "+ ctry +" "+ postal;
+        }
+
+        return fullAddress;
     }
 }

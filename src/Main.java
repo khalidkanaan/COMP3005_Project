@@ -7,10 +7,7 @@ public class Main {
     static String username = "postgres";
     static String password = "0795";
     static Connection connection;
-
-    private static String Login;
-
-
+    private static String Login; //Stores the user_id of the current user/owner
 
     static {
         try {
@@ -20,6 +17,11 @@ public class Main {
         }
     }
 
+    /**
+     * Main function
+     * @param args
+     * @throws SQLException
+     */
     public static void main(String[] args) throws SQLException {
         try {
             System.out.println("Welcome to The Book Store!");
@@ -62,6 +64,11 @@ public class Main {
 
     }
 
+    /**
+     * Allows a new user to register a new account. Uses Scanner to store the inputted
+     * values to be inserted into the user entity in the project schema.
+     * @throws SQLException
+     */
     public static void registerAccount() throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your username: ");
@@ -89,6 +96,11 @@ public class Main {
 
     }
 
+    /**
+     * Allows the user/owner to login to the bookstore using their email
+     * and password.
+     * @throws SQLException
+     */
     public static void logIn() throws SQLException{
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your Email: ");
@@ -128,6 +140,10 @@ public class Main {
 
     }
 
+    /**
+     * Displays the list of all books in the library.
+     * @throws SQLException
+     */
     public static void displayBooks() throws SQLException {
         System.out.println("\nInventory:");
         String sql= "Select count (*) AS totalBooks FROM project.book;";
@@ -146,6 +162,11 @@ public class Main {
         System.out.println();
     }
 
+    /**
+     * Prints out the owner actions for the owner after login. Uses scanner
+     * to choose action to be performed.
+     * @throws SQLException
+     */
     public static void ownerActions() throws SQLException{
         System.out.println("You have Accessed Owner portal");
         System.out.println("Options:");
@@ -183,6 +204,10 @@ public class Main {
 
     }
 
+    /**
+     * Allows the user to view all the books in the book store.
+     * @throws SQLException
+     */
     public static void fullDisplay() throws SQLException{
         displayBooks();
 
@@ -200,6 +225,14 @@ public class Main {
 
     }
 
+    /**
+     * Allows the owner to add a book to project.book using the isbn. If the book isbn
+     * already exists in book, then the owner will be asked to enter the quantity of the
+     * of that book they would like to add to inventory. Else, if the book is not in
+     * the entity book, then the owner will is prompted to enter book information as
+     * well as the information of the publisher.
+     * @throws SQLException
+     */
     public static void addBook() throws SQLException{
         Scanner scanner = new Scanner(System.in);
 
@@ -270,9 +303,16 @@ public class Main {
         }
     }
 
-
+    /**
+     * Transfers the money between publisher and owner when the owner orders more
+     * books to add to the inventory. The owner pays the publisher_fee price for each
+     * book ordered multiplied by the quantity. The publisher receives the money from
+     * the owner.
+     * @param stock_increase
+     * @param isbn
+     * @throws SQLException
+     */
     public static void transferMoney(int stock_increase, long isbn) throws SQLException {
-
         //Find the publisher fee of the book through its isbn primary key
         String sql = "SELECT publisher_fee FROM project.book WHERE isbn = '"+isbn+"';";
         Statement get_fee = connection.createStatement();
@@ -303,7 +343,11 @@ public class Main {
         deductFromExpenditure.executeUpdate(sql3);
     }
 
-
+    /**
+     * links a publisher to the book they publish
+     * @param isbn
+     * @throws SQLException
+     */
     public static void linkPublisher(Long isbn) throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter publisher name: ");
@@ -356,6 +400,10 @@ public class Main {
         }
     }
 
+    /**
+     * Function containing a scanner that allows the user to create their address.
+     * @throws SQLException
+     */
     public static void createUserAddress() throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your street number: ");
@@ -384,6 +432,13 @@ public class Main {
         statement1.executeUpdate(sql);
     }
 
+    /**
+     * Calls the function that prompts the user to enter their address and links the
+     * newly created user address to the address table via the relation userAddress present
+     * in the project schema.
+     * @param user_id
+     * @throws SQLException
+     */
     public static void createAndLinkUserAddress(String user_id) throws SQLException {
         //calls the function that creates the address
         createUserAddress();
@@ -425,7 +480,15 @@ public class Main {
         statement1.executeUpdate(sql2);
     }
 
-        //function that creates the address and links it to cart
+        //function that
+
+    /**
+     * Creates the address for any publisher the owner adds and links it that newly
+     * created address to the address table via the relation publihserAddress in the project
+     * schema.
+     * @param publisher_name
+     * @throws SQLException
+     */
     public static void createAndLinkPublisherAddress(String publisher_name) throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter street number: ");
@@ -476,6 +539,13 @@ public class Main {
 
     }
 
+    /**
+     * Checks if a user_id is already taken at registration. Prompts the user to enter a
+     * valid id again and prints a suggested id for a user that can be used if the user wishes.
+     * @param scanner
+     * @return
+     * @throws SQLException
+     */
     public static String checkIdTaken(Scanner scanner) throws SQLException {
         String id = "";
         int userExists = 0;
@@ -512,6 +582,13 @@ public class Main {
         return id;
     }
 
+    /**
+     * Function that makes sure the user of the program does not enter mismatched
+     * values into the scanner that will cause an error in the SQL statement execution.
+     * @param scanner the current scanner in use.
+     * @param message the message of the question to be printed again.
+     * @return the money value
+     */
     public static double checkMoney(Scanner scanner, String message){
         double money = 0;
         boolean notnum = true;
@@ -529,6 +606,13 @@ public class Main {
         return money;
     }
 
+    /**
+     * Function that makes sure the user enters an integer value in the scanner.
+     * Any other value that is not int will prompt the user to enter the quantity again.
+     * @param scanner the current scanner in use.
+     * @param message the message of the question to be printed again.
+     * @return the money value
+     */
     public static int checkQuantity(Scanner scanner, String message){
         int quantity = 0;
         boolean notnum = true;
@@ -546,6 +630,15 @@ public class Main {
         return quantity;
     }
 
+    /**
+     * Function that confirms the user of the program does not enter mismatched values
+     * into scanner that is not of type long that which might cause an error in the SQL
+     * statement execution. checlLong is used for isbn and phone numbers as these too values
+     * can exceed the max value of int.
+     * @param scanner the current scanner in use.
+     * @param message the message of the question to be printed again.
+     * @return the money value
+     */
     public static long checkLong(Scanner scanner, String message){
         long phonenum = 0;
         boolean notnum = true;
@@ -563,6 +656,11 @@ public class Main {
         return phonenum;
     }
 
+    /**
+     * Allows the owner to completely remove a book from the book store. Or
+     * decrease the inventory of a specific book in stock.
+     * @throws SQLException
+     */
     public static void removeBook() throws SQLException{
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter book ISBN: ");
@@ -613,6 +711,12 @@ public class Main {
             }
         }
     }
+
+    /**
+     * Allows the owner to print reports. The owner has the option to choose from a list of
+     * four different reports as per project requirement.
+     * @throws SQLException
+     */
     public static void salesCheck() throws SQLException{
         Scanner scanner = new Scanner(System.in);
         System.out.println("type p for publisher profit report"); //money paid to each publisher
@@ -685,6 +789,11 @@ public class Main {
 
     }
 
+    /**
+     * Prints out the user actions for a user after login. Uses scanner
+     * to choose action to be performed.
+     * @throws SQLException
+     */
     public static void userActions() throws SQLException{
         //displays the books for the user;
         displayBooks();
@@ -732,6 +841,13 @@ public class Main {
 
     }
 
+    /**
+     * Allows the user to search for a specific book. Users can by book isbn,
+     * title, author, or genre. If a user enters part of a book title ex: "lord of the"
+     * ILIKE is used in the SQL statement to ignore case sensitivity and find all the
+     * books that contain those words in them.
+     * @throws SQLException
+     */
     public static void findBook() throws SQLException{
         Scanner scanner = new Scanner(System.in);
         System.out.println("type i to search by ISBN");
@@ -815,13 +931,19 @@ public class Main {
 
     }
 
-
+    /**
+     * Allows the user to add book to cart by using the isbn of a book. If the
+     * book isbn is invalid the scanner will prompt the user to try again with a
+     * valid isbn. If a user enters more copies in their cart than what is available
+     * in the book inventory. Then the quantity of the book is set to inventory.
+     * @throws SQLException
+     */
     public static void addToCart() throws SQLException{
         Scanner scanner =  new Scanner(System.in);
         System.out.println("Enter ISBN Book you would like to Add");
         int quantity = 0;
         long book_id = 0;
-        int cartID=0;
+        int cartID = 0;
         String title="";
 
         boolean exists = false;
@@ -901,6 +1023,12 @@ public class Main {
         }
     }
 
+    /**
+     * Allows the user to remove a specific quantity of a book from their cart.
+     * If the user removes more of a book than what was in cart, then the book is
+     * removed completely from cart i.e. (cart quantity = 0).
+     * @throws SQLException
+     */
     public static void removeCart() throws SQLException{
         Scanner scanner =  new Scanner(System.in);
         System.out.println("Enter ISBN Book you would like to Remove");
@@ -929,8 +1057,8 @@ public class Main {
             }
 
 
-            System.out.println("How many copies would you like?");
-            quantity = checkQuantity(scanner,"How many copies would you like?");
+            System.out.println("How many copies of this book would you like to remove?");
+            quantity = checkQuantity(scanner,"How many copies of this book would you like to remove?");
 
             int inCart =0;
             String sql3 = "SELECT quantity FROM project.cartItem WHERE isbn ='"+s+"';";
@@ -978,6 +1106,11 @@ public class Main {
 
     }
 
+    /**
+     * Allows the user to view the items in their cart. The total quantity of each
+     * book and the total expected price including tax.
+     * @throws SQLException
+     */
     public static void viewUserCart() throws SQLException{
         String sql = "SELECT cart_id FROM project.userCart WHERE user_id = '"+Login+"';";
         Statement statement = connection.createStatement();
@@ -1034,6 +1167,13 @@ public class Main {
         }
     }
 
+    /**
+     * Checks if the cart is empty by invoking SQL function created in postgres.
+     * If the stock for a book is below 10 after a purchase, then the SQL function
+     * returns true, otherwise false.
+     * @return true if the stock < 10, false otherwise
+     * @throws SQLException
+     */
     public static boolean cartEmpty() throws SQLException {
         String sql = "SELECT cart_id FROM project.userCart WHERE user_id = '"+Login+"';";
         Statement statement = connection.createStatement();
@@ -1057,6 +1197,14 @@ public class Main {
         }
     }
 
+    /**
+     * Allows the user to finalize their order. The user is asked to confirm their
+     * checkout decision. If they want to checkout, then the shipping address created
+     * at registration is printed for the user to confirm. If the user decides to change
+     * their shipping address then a new Scanner is created to update the shipping
+     * address of the current user.
+     * @throws SQLException
+     */
     public static void checkout() throws SQLException{
         Scanner scanner = new Scanner(System.in);
 
@@ -1138,6 +1286,13 @@ public class Main {
     public static void updateShippingAddress(){
     }
 
+    /**
+     * Creates an order when a user checks out. In the while loop of the resultSet
+     * the functions updateBookSales(isbn, quantity) and lessThanTenStock(isbn) are
+     * called to update the sales quantity in book and prompt the owner to add more
+     * books in case the inventory of a book drops below 10 books.
+     * @throws SQLException
+     */
     public static void createOrder() throws SQLException{
         int[] intArray = {0,1,2,3,4,5,6,7,8,9};
         String idx = String.valueOf(new Random().nextInt(intArray.length));
@@ -1208,6 +1363,13 @@ public class Main {
         linkOrderToAddress(address_id, order_id);
     }
 
+    /**
+     * Updates the sales quantity of any book after a user order. The quantity of the
+     * book is deducted from the inventory (stock) of the book and added to the sales.
+     * @param isbn
+     * @param quantity
+     * @throws SQLException
+     */
     public static void updateBookSales(long isbn, int quantity) throws SQLException {
         //Updates the sales and inventory column of the book table in the project schema
         String sql = "UPDATE project.book SET sales = sales + '"+quantity+"', inventory = inventory - '"+quantity+"' WHERE isbn = '"+isbn+"';";
@@ -1215,6 +1377,13 @@ public class Main {
         statement.executeUpdate(sql);
     }
 
+    /**
+     * checks if a specific book's stock drops below 10 books then 15 more books are
+     * added by the owner. The function transferMoney(quantity, isbn) is called to
+     * transfer the money from the owner to the publisher of a specific book.
+     * @param isbn
+     * @throws SQLException
+     */
     public static void lessThanTenStock(long isbn) throws SQLException {
         //uses the function created to check if the amount of books is less than 10 after an order has been created.
         String sql = "SELECT check_stock_amount('"+isbn+"') AS inventory";
@@ -1237,18 +1406,36 @@ public class Main {
         }
     }
 
+    /**
+     * Links the order to cart via the relation checkout
+     * @param cart_id
+     * @param uuid
+     * @throws SQLException
+     */
     public static void linkCheckoutToOrder(int cart_id, String uuid) throws SQLException {
         String sql = "INSERT INTO project.checkout(cart_id, order_num) VALUES ('"+cart_id+"', '"+uuid+"');";
         Statement statement = connection.createStatement();
         statement.executeUpdate(sql);
     }
 
+    /**
+     * Links the order to address via the relation orderAddress. The registration
+     * address is not necessarily the same shipping address used for the order.
+     * @param address_id
+     * @param uuid
+     * @throws SQLException
+     */
     public static void linkOrderToAddress(int address_id, String uuid) throws SQLException {
         String sql = "INSERT INTO project.orderAddress(address_id, order_num) VALUES ('"+address_id+"', '"+uuid+"');";
         Statement statement = connection.createStatement();
         statement.executeUpdate(sql);
     }
 
+    /**
+     * Allows the user to view all their past orders arranged by descending order date which
+     * displays the most recent first at the top of the list in case of multiple orders
+     * @throws SQLException
+     */
     public static void viewOrders() throws SQLException {
         Scanner scanner = new Scanner(System.in);
         String sql = "SELECT order_num, tracking_num, order_date, carrier, total_price, A.address_id from project.order " +
@@ -1288,6 +1475,11 @@ public class Main {
         }
     }
 
+    /**
+     * tracks an order using a valid tracking number. To obtain a valid tracking number, the user must
+     * view their orders in order to retrieve a tracking number.
+     * @throws SQLException
+     */
     public static void trackOrder() throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Please enter the tracking number of the order you would like to track");
@@ -1337,6 +1529,12 @@ public class Main {
         }
     }
 
+    /**
+     * Function that returns the address of the user as a string.
+     * @param address_id
+     * @return the full address of the user as a single line String
+     * @throws SQLException
+     */
     public static String getAddress(int address_id) throws SQLException {
         String sql = "SELECT street_num, street_name, apartment, city, province, country, postal_code FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"';";
         Statement statement = connection.createStatement();

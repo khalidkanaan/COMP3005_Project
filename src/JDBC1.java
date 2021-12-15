@@ -637,9 +637,9 @@ public class JDBC1 {
                 String sql = "Select sum(sales * sell_price) AS salesSum FROM project.book;";
                 Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql);
-                int salesSum = 0;
+                double salesSum = 0;
                 while (result.next()){
-                    salesSum = result.getInt("salesSum");
+                    salesSum = result.getDouble("salesSum");
                 }
                 String sql1 = "SELECT expenditure FROM project.owner;";
                 Statement statement1 = connection.createStatement();
@@ -836,14 +836,24 @@ public class JDBC1 {
 
         }
         if(exists){
+            String getStock = "SELECT inventory FROM project.book WHERE isbn ='"+book_id+"';";
+            Statement getStockAmount = connection.createStatement();
+            ResultSet stockResult = getStockAmount.executeQuery(getStock);
+            int inventory = 0;
+            while(stockResult.next()){
+                inventory = stockResult.getInt("inventory");
+            }
+
             boolean inCart = false;
             String sql3 = "SELECT * FROM project.cartItem WHERE isbn ='"+book_id+"';";
             Statement statement3 = connection.createStatement();
             ResultSet result3 = statement3.executeQuery(sql3);
+            int quantityInCart = 0;
             while(result3.next()){
+                quantityInCart = result3.getInt("quantity");
                 inCart = true;
-
             }
+
             System.out.println("How many copies would you like?");
 
             quantity = checkQuantity(scanner,"How many copies would you like?");
@@ -856,14 +866,22 @@ public class JDBC1 {
             }
 
             if (inCart){
+                //can't add more books to cart than what the store has in stock
+                if(quantity+quantityInCart >= inventory){
+                    quantity = inventory-quantityInCart;
+                }
                 String sql4 = "UPDATE project.cartItem SET quantity = quantity + '"+quantity+"' WHERE cart_id = '"+cartID+"'AND isbn = '"+book_id+"';";
                 Statement statement4 = connection.createStatement();
                 statement4.executeUpdate(sql4);
             }else{
+                //can't add more books to cart than what the store has in stock
+                if(quantity >= inventory){
+                    quantity = inventory;
+                }
                 String sql2 = "INSERT INTO project.cartItem(cart_id, isbn, quantity) VALUES ('"+cartID+"', '"+book_id+"','"+quantity+"');";
                 Statement statement2 = connection.createStatement();
                 statement2.executeUpdate(sql2);
-                System.out.println("Added " + quantity+" copies of :" +title+ " to your cart.");
+                System.out.println("Added " + quantity+" copies of: " +title+ " to your cart.");
             }
 
         }else{
@@ -1158,12 +1176,17 @@ public class JDBC1 {
         double sell_price = 0;
         double total_per_book = 0;
         double total_cart_value = 0;
+        long isbn = 0;
 
         while(result2.next()){
+            isbn = result2.getLong("isbn");
             quantity = result2.getInt("quantity");
             sell_price = result2.getDouble("sell_price");
             total_per_book = sell_price * quantity;
             total_cart_value+=total_per_book;
+
+            updateBookSales(isbn, quantity); //updates the sales number and inventory of each book that was ordered
+            lessThanTenStock(isbn); //checks if the inventory of a book drops below 10 and adds 15 more books to that book's inventory.
         }
         total_cart_value = Math.round(total_cart_value*1.13*100.0)/100.0;
 
@@ -1183,6 +1206,35 @@ public class JDBC1 {
 
         linkCheckoutToOrder(cart_id, order_id);
         linkOrderToAddress(address_id, order_id);
+    }
+
+    public static void updateBookSales(long isbn, int quantity) throws SQLException {
+        //Updates the sales and inventory column of the book table in the project schema
+        String sql = "UPDATE project.book SET sales = sales + '"+quantity+"', inventory = inventory - '"+quantity+"' WHERE isbn = '"+isbn+"';";
+        Statement statement = connection.createStatement();
+        statement.executeUpdate(sql);
+    }
+
+    public static void lessThanTenStock(long isbn) throws SQLException {
+        //uses the function created to check if the amount of books is less than 10 after an order has been created.
+        String sql = "SELECT check_stock_amount('"+isbn+"') AS inventory";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        boolean lessThanTen = false;
+
+        while (result.next()){
+            lessThanTen = result.getBoolean("inventory");
+        }
+
+        if(lessThanTen){
+            //orders 15 more books if the function check_stock_amount(isbn) returns true for any book
+            String sql1 = "UPDATE project.book SET inventory = inventory + 15 WHERE isbn = '"+isbn+"';";
+            Statement statement1 = connection.createStatement();
+            statement1.executeUpdate(sql1);
+
+            //transfer money from owner to publisher. 15*publisher_fee of the book is added to the publisher and deducted from owner
+            transferMoney(15, isbn);
+        }
     }
 
     public static void linkCheckoutToOrder(int cart_id, String uuid) throws SQLException {
@@ -1257,7 +1309,7 @@ public class JDBC1 {
             address_id = result.getInt("address_id");
 
             System.out.println("\nOrder Number: "+order_number);
-            System.out.println("Order On: "+order_date);
+            System.out.println("Ordered On: "+order_date);
             System.out.println("Carrier: "+shipper);
             System.out.println("Shipped to: "+getAddress(address_id));
 

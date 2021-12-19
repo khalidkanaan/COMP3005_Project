@@ -999,7 +999,7 @@ public class Main {
                 cartID = result1.getInt("cart_id");
             }
 
-            if (inCart){
+            if (inCart && quantity != 0){
                 //can't add more books to cart than what the store has in stock
                 if(quantity+quantityInCart >= inventory){
                     quantity = inventory-quantityInCart;
@@ -1007,6 +1007,8 @@ public class Main {
                 String sql4 = "UPDATE project.cartItem SET quantity = quantity + '"+quantity+"' WHERE cart_id = '"+cartID+"'AND isbn = '"+book_id+"';";
                 Statement statement4 = connection.createStatement();
                 statement4.executeUpdate(sql4);
+            }else if(quantity == 0) {
+                System.out.println("No books were added to your cart.");
             }else{
                 //can't add more books to cart than what the store has in stock
                 if(quantity >= inventory){

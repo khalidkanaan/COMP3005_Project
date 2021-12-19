@@ -1373,6 +1373,7 @@ public class Main {
 
         linkCheckoutToOrder(cart_id, order_id);
         linkOrderToAddress(address_id, order_id);
+        clearUserCart(cart_id);
 
         Scanner scanner = new Scanner(System.in);
         System.out.println("\nType m to return to menu");
@@ -1382,6 +1383,18 @@ public class Main {
                 userActions();
             }
         }
+    }
+
+    /**
+     * Clears all the books associated with a specific cart_id for a user after a
+     * successful purchase from the book store.
+     * @param cart_id
+     * @throws SQLException
+     */
+    public static void clearUserCart(int cart_id) throws SQLException {
+        String sql = "DELETE FROM project.cartItem WHERE cart_id = '"+cart_id+"';";
+        Statement statement = connection.createStatement();
+        statement.executeUpdate(sql);
     }
 
     /**
@@ -1483,7 +1496,7 @@ public class Main {
             System.out.println("Tracking Number: "+tracking_number);
             System.out.println("Date of Purchase: "+order_date);
             System.out.println("Carrier: "+shipper);
-            System.out.println("Total: "+total_price);
+            System.out.println("Total: $"+total_price);
             System.out.println("Shipped to: "+getAddress(address_id));
         }
         System.out.println("------------------------------------------------------------------------------");

@@ -31,7 +31,7 @@ public class Main {
      */
     public static void startMenu() {
         try {
-            System.out.println("Welcome to The Book Store!");
+            System.out.println("\nWelcome to The Book Store!");
             System.out.println();
             System.out.println("type r to register an account");
             System.out.println("type l to login to your account");
@@ -222,13 +222,10 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
         System.out.println("\ntype m to access menu");
-        System.out.println("type b to go back");
-        while(scanner.hasNext()){
+        while(scanner.hasNext()) {
             String s = scanner.next();
-            if (s.equals("m")){
+            if (s.equals("m")) {
                 ownerActions();
-            }else if (s.equals("b")){
-                fullDisplay();
             }
         }
 
@@ -301,7 +298,7 @@ public class Main {
             transferMoney(stock, isbn);
         }
         System.out.println("\ntype m to access menu");
-        System.out.println("type b to go back");
+        System.out.println("type b to add another book");
         while(scanner.hasNext()){
             String s = scanner.next();
             if (s.equals("m")){
@@ -710,7 +707,7 @@ public class Main {
             System.out.println(("Failed to remove Book!"));
         }
         System.out.println("\ntype m to access menu");
-        System.out.println("type b to go back");
+        System.out.println("type b to remove another book");
         while(scanner.hasNext()){
             String s = scanner.next();
             if (s.equals("m")){
@@ -931,7 +928,7 @@ public class Main {
             break;
         }
         System.out.println("\ntype m to access menu");
-        System.out.println("type b to go back");
+        System.out.println("type b to search for another book");
         while(scanner.hasNext()){
             String s = scanner.next();
             if (s.equals("m")){
@@ -1026,7 +1023,7 @@ public class Main {
 
 
         System.out.println("\ntype m to access menu");
-        System.out.println("type b to go back");
+        System.out.println("type b to add another book");
         while(scanner.hasNext()){
             String str = scanner.next();
             if (str.equals("m")){
@@ -1106,8 +1103,8 @@ public class Main {
             System.out.println("That book is not in Cart");
         }
 
-        System.out.println("\ntype m to access menu");
-        System.out.println("type b to go back");
+        System.out.println("\ntype m to access user menu");
+        System.out.println("type b to remove another book from cart");
 
         while(scanner.hasNext()){
             String str = scanner.next();

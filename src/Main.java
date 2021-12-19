@@ -1,4 +1,7 @@
+import javax.swing.*;
+import java.io.*;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -18,12 +21,87 @@ public class Main {
     }
 
     /**
-     * Main function
+     * Main function, contains a JOptionPane that asks the user if this was
+     * their first attempt at running the profram and imports the SQL file
+     * from the package SQL. Clicking yes overwrites the project schema and
+     * removes all the user data entered previously.
      * @param args
      * @throws SQLException
      */
-    public static void main(String[] args) {
-        startMenu();
+    public static void main(String[] args) throws SQLException {
+        int reply1 = JOptionPane.showConfirmDialog(null, "Is this your first time running this program?", "Overwrite Message", JOptionPane.YES_NO_OPTION);
+        if (reply1 == JOptionPane.YES_OPTION) {
+            executeSqlScript(connection, new File("src/SQL/Queries.sql"), ";");
+            executeSqlScript(connection, new File("src/SQL/Setup.sql"), ";" );
+            executeSqlScript(connection, new File("src/SQL/Functions.sql"), "--" );
+            startMenu();
+        } else if(checkSchemaAlreadyExists()){
+            startMenu();
+        }else{
+            System.exit(0);
+        }
+    }
+
+    /**
+     * Function that returns true if a schema project is already created.
+     * @return true if a project schema already exists, false otherwise
+     * @throws SQLException
+     */
+    public static boolean checkSchemaAlreadyExists() throws SQLException {
+        //uses one of the SQL functions created to check if the project schema already exists
+        String sql = "SELECT check_schema_exists() AS exists;";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        boolean exists = false;
+
+        while (result.next()){
+            exists = result.getBoolean("exists");
+        }
+        return exists;
+    }
+
+    /**
+     * File reader that reads the functions, queries, Setup SQL files provided
+     * in the SQL package and executes them in postgres.
+     * @param conn
+     * @param inputFile
+     * @param delimiter
+     */
+    public static void executeSqlScript(Connection conn, File inputFile, String delimiter) {
+        // Create scanner
+        Scanner scanner;
+        try {
+            scanner = new Scanner(inputFile).useDelimiter(delimiter);
+        } catch (FileNotFoundException e1) {
+            e1.printStackTrace();
+            return;
+        }
+
+        // Loops through the SQL statements
+        Statement currentStatement = null;
+        while(scanner.hasNext()) {
+            // Gets the statement
+            String rawStatement = scanner.next() + delimiter;
+            try {
+                // Executes the statement
+                currentStatement = conn.createStatement();
+                currentStatement.execute(rawStatement);
+            } catch (SQLException e) {
+                //e.printStackTrace();
+                e.getCause();
+            } finally {
+                //Release resources
+                if (currentStatement != null) {
+                    try {
+                        currentStatement.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+                currentStatement = null;
+            }
+        }
+        scanner.close();
     }
 
     /**
@@ -407,10 +485,12 @@ public class Main {
     }
 
     /**
-     * Function containing a scanner that allows the user to create their address.
+     * Allows the user to create their Shipping address.
+     * @param isUpdate if isUpdate is true updates an existing address, else it inserts the address
+     * @param address_id set to null if isUpdate is false
      * @throws SQLException
      */
-    public static void createUserAddress() throws SQLException {
+    public static void createUserAddress(boolean isUpdate, Object address_id) throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your street number: ");
         int street_num = checkQuantity(scanner, "Enter your street number: ");
@@ -429,11 +509,26 @@ public class Main {
         System.out.println("Enter your postal code: ");
         String postal = scanner.next();
 
+        String sql = "";
+        if(isUpdate){
+            sql = "UPDATE project.address SET street_num = '"+street_num+"', street_name = '"+street_name+"', apartment = '"+apartment+"', city = '"+city+"', province = '"+province+"', country = '"+country+"', postal_code = '"+postal+"' WHERE address_id = '"+address_id+"';";
+        }else{
+            sql = "INSERT INTO project.address(street_num, street_name, apartment, city, province, country, postal_code) VALUES" +
+                    " ('"+street_num+"', '"+street_name+"', '"+apartment+"', '"+city+"', '"+province+"', '"+country+"', '"+postal+"');";
 
-        String sql = "INSERT INTO project.address(street_num, street_name, apartment, city, province, country, postal_code) VALUES" +
-                " ('"+street_num+"', '"+street_name+"', '"+apartment+"', '"+city+"', '"+province+"', '"+country+"', '"+postal+"');";
+        }
+        Statement statement = connection.createStatement();
+        statement.executeUpdate(sql);
+    }
 
-
+    /**
+     * Updates the shipping address of a user to billing address, if their shipping
+     * address is different from the one used at registration;
+     * @param address_id
+     * @throws SQLException
+     */
+    public static void changeShippingToBilling(int address_id) throws SQLException {
+        String sql = "UPDATE project.address SET isShipping = 'false' WHERE address_id = '"+address_id+"';";
         Statement statement1 = connection.createStatement();
         statement1.executeUpdate(sql);
     }
@@ -447,7 +542,7 @@ public class Main {
      */
     public static void createAndLinkUserAddress(String user_id) throws SQLException {
         //calls the function that creates the address
-        createUserAddress();
+        createUserAddress(false,null);
 
         //looks up the address that we just added and finds the address_id
         String sql2 = "SELECT currval('project.address_address_id_seq'::regclass);";
@@ -486,7 +581,6 @@ public class Main {
         statement1.executeUpdate(sql2);
     }
 
-        //function that
 
     /**
      * Creates the address for any publisher the owner adds and links it that newly
@@ -1208,6 +1302,41 @@ public class Main {
         }
     }
 
+    public static int displayCurrentUserAddress(boolean isShipping) throws SQLException {
+        String sql = "SELECT address_id, street_num, street_name, apartment, city, province, country, postal_code FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"' AND isShipping = '"+isShipping+"';";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        int address_id = 0;
+        String st_num = "";
+        String st_name = "";
+        String app = "";
+        String city = "";
+        String prov = "";
+        String ctry = "";
+        String postal = "";
+
+        while (result.next()){
+            address_id = result.getInt("address_id");
+            st_num = result.getString("street_num");
+            st_name = result.getString("street_name");
+            app = result.getString("apartment");
+            city = result.getString("city");
+            prov = result.getString("province");
+            ctry = result.getString("country");
+            postal = result.getString("postal_code");
+
+            System.out.println("Street Number: "+st_num);
+            System.out.println("Street Name: "+st_name);
+            System.out.println("Apartment: "+app);
+            System.out.println("City: "+city);
+            System.out.println("Province: "+prov);
+            System.out.println("Country: "+ctry);
+            System.out.println("Postal Code: "+postal);
+        }
+
+        return address_id;
+    }
+
     /**
      * Allows the user to finalize their order. The user is asked to confirm their
      * checkout decision. If they want to checkout, then the shipping address created
@@ -1225,36 +1354,10 @@ public class Main {
             while(scanner.hasNext()){
                 String s1 = scanner.next();
                 if(s1.equals("yes") || s1.equals("y") || s1.equals("Yes") || s1.equals("Y")){
-                    String sql = "SELECT street_num, street_name, apartment, city, province, country, postal_code FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"';";
-                    Statement statement = connection.createStatement();
-                    ResultSet result = statement.executeQuery(sql);
-                    System.out.println("Your current address is: ");
-                    String st_num = "";
-                    String st_name = "";
-                    String app = "";
-                    String city = "";
-                    String prov = "";
-                    String ctry = "";
-                    String postal = "";
+                    System.out.println("Your current Shipping address is: ");
+                    int address_id = displayCurrentUserAddress(true);
 
-                    while (result.next()){
-                        st_num = result.getString("street_num");
-                        st_name = result.getString("street_name");
-                        app = result.getString("apartment");
-                        city = result.getString("city");
-                        prov = result.getString("province");
-                        ctry = result.getString("country");
-                        postal = result.getString("postal_code");
-
-                        System.out.println("Street Number: "+st_num);
-                        System.out.println("Street Name: "+st_name);
-                        System.out.println("Apartment: "+app);
-                        System.out.println("City: "+city);
-                        System.out.println("Province: "+prov);
-                        System.out.println("Country: "+ctry);
-                        System.out.println("Postal Code: "+postal);
-                    }
-                    System.out.println("\nDo you want to use the same shipping address created at registration? (yes/no) ");
+                    System.out.println("\nDo you want to use that Shipping address for your order? (yes/no) ");
                     String s2 = scanner.next();
                     if(s2.equals("yes") || s2.equals("y") || s2.equals("Yes") || s2.equals("Y")){
                         createOrder();
@@ -1262,16 +1365,15 @@ public class Main {
 
                     }else if(s2.equals("no") || s2.equals("n") || s2.equals("No") || s2.equals("N")){
                         //continue from here
-                        createUserAddress();
-                        Scanner scanner1 = new Scanner(System.in);
-                        System.out.println("\nDo you want to make this shipping address your default shipping address? (yes/no) ");
-
-                        String s3 = scanner1.next();
-                        if(s3.equals("yes") || s3.equals("y") || s3.equals("Yes") || s3.equals("Y")){
-                            return;
-                        }else if(s3.equals("no") || s3.equals("n") || s3.equals("No") || s3.equals("N")){
+                        if(hasTwoAddresses()){
+                            System.out.println("Updating your shipping address");
+                            createUserAddress(true,address_id);
+                            System.out.println("Shipping address updated");
                             createOrder();
-                            return;
+                        }else{
+                            changeShippingToBilling(address_id);
+                            createAndLinkUserAddress(Login);
+                            createOrder();
                         }
                     }
                 }
@@ -1294,7 +1396,21 @@ public class Main {
 
     }
 
-    public static void updateShippingAddress(){
+    /**
+     * Checks if the user has two addresses associated to their user_id
+     * @return true if the user has two addresses associated with their user_id, false otherwise
+     * @throws SQLException
+     */
+    public static boolean hasTwoAddresses() throws SQLException {
+        String sql = "SELECT check_two_addresses('"+Login+"');";
+        Statement statement = connection.createStatement();
+        ResultSet result = statement.executeQuery(sql);
+        boolean hasTwoAddresses = false;
+
+        while (result.next()){
+            hasTwoAddresses = result.getBoolean("check_two_addresses");
+        }
+        return hasTwoAddresses;
     }
 
     /**
@@ -1471,8 +1587,8 @@ public class Main {
      */
     public static void viewOrders() throws SQLException {
         Scanner scanner = new Scanner(System.in);
-        String sql = "SELECT order_num, tracking_num, order_date, carrier, total_price, A.address_id from project.order " +
-                     "NATURAL JOIN project.orderAddress A, project.userAddress B WHERE user_id = '"+Login+"' ORDER BY order_date DESC;";
+        String sql = "SELECT * from project.order NATURAL JOIN (SELECT * from project.orderAddress NATURAL JOIN project.userAddress) AS FOO " +
+                     "WHERE user_id = '"+Login+"' ORDER BY order_date DESC;";
 
         Statement statement = connection.createStatement();
         ResultSet result = statement.executeQuery(sql);
@@ -1569,7 +1685,7 @@ public class Main {
      * @throws SQLException
      */
     public static String getAddress(int address_id) throws SQLException {
-        String sql = "SELECT street_num, street_name, apartment, city, province, country, postal_code FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"';";
+        String sql = "SELECT street_num, street_name, apartment, city, province, country, postal_code FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"' AND address_id = '"+address_id+"';";
         Statement statement = connection.createStatement();
         ResultSet result = statement.executeQuery(sql);
         String st_num = "";

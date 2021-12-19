@@ -109,8 +109,7 @@ CREATE TABLE project.userAddress (
     address_id 	BIGSERIAL NOT NULL REFERENCES project.address(address_id),
     user_id 	varchar(20) NOT NULL REFERENCES project.user(user_id) ON DELETE CASCADE,
 
-    CONSTRAINT 	user_address_pkey PRIMARY KEY (address_id),
-    UNIQUE (user_id)
+    CONSTRAINT 	user_address_pkey PRIMARY KEY (user_id, address_id)
 );
 
 CREATE TABLE project.publisherAddress (

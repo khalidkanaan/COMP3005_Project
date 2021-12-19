@@ -112,17 +112,3 @@ update project.publisher set bank_account = bank_account + 12*0.20 where publish
 update project.owner set expenditure = expenditure - 12*0.20;
 update project.publisher set bank_account = bank_account + 12*0.20 where publisher_name = 'Scholastic Press';
 update project.owner set expenditure = expenditure - 12*0.20;
-
--- Function
-
-CREATE OR REPLACE FUNCTION check_stock_amount(book_isbn numeric(13,0))
-    RETURNS BOOLEAN AS $$
-BEGIN
-    RETURN 10 > (
-        SELECT inventory
-        FROM project.book
-        WHERE isbn = book_isbn
-    );
-END;
-$$ 	LANGUAGE plpgsql;
-

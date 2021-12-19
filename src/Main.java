@@ -22,7 +22,14 @@ public class Main {
      * @param args
      * @throws SQLException
      */
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) {
+        startMenu();
+    }
+
+    /**
+     * Allows the user to login or register an account.
+     */
+    public static void startMenu() {
         try {
             System.out.println("Welcome to The Book Store!");
             System.out.println();
@@ -61,7 +68,6 @@ public class Main {
             System.out.println("Connection error to PostgreSQL server");
             e.printStackTrace();
         }
-
     }
 
     /**
@@ -174,6 +180,7 @@ public class Main {
         System.out.println("type a to add a book");
         System.out.println("type r to remove a book");
         System.out.println("type s to check reports");
+        System.out.println("type l to logout of admin account");
         System.out.println("type h for more help");
         Scanner scanner = new Scanner(System.in);
 
@@ -191,6 +198,8 @@ public class Main {
                 removeBook();
             }else if(s1.equals("s")) {
                 salesCheck();
+            }else if(s1.equals("l")) {
+                startMenu();
             }else if(s1.equals("h")){
                 System.out.println("h : help");
                 System.out.println("r : register");
@@ -806,6 +815,7 @@ public class Main {
         System.out.println("type o to view your order history");
         System.out.println("type t to track your order");
         System.out.println("type c to checkout");
+        System.out.println("type l to logout");
         System.out.println("type h for more help");
         Scanner scanner = new Scanner(System.in);
 
@@ -829,6 +839,8 @@ public class Main {
                 viewOrders();
             }else if(s1.equals("t")) {
                 trackOrder();
+            }else if(s1.equals("l")) {
+                startMenu();
             }else if(s1.equals("h")){
                 System.out.println("h : help");
                 System.out.println("r : register");
@@ -1300,7 +1312,7 @@ public class Main {
             idx = idx + new Random().nextInt(intArray.length);
         }
         String trackingNum = "CL"+idx+"CA";
-        System.out.println(trackingNum);
+        System.out.println("Your tracking number is: "+ trackingNum);
         //CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA project;
 
 
@@ -1361,6 +1373,15 @@ public class Main {
 
         linkCheckoutToOrder(cart_id, order_id);
         linkOrderToAddress(address_id, order_id);
+
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\nType m to return to menu");
+        while(scanner.hasNext()){
+            String s = scanner.next();
+            if (s.equals("m")){
+                userActions();
+            }
+        }
     }
 
     /**

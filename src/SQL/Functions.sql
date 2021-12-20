@@ -14,9 +14,10 @@ $$ 	LANGUAGE plpgsql;
 --
 
 /*
-When registering, the user inputs their billing address. At checkout they are asked if they would like to add an aditional address to be used as shipping address.
-A new address is linked to the user and they checkout. If the user goes through checkout once more and picks the different address option, instead of a new address being created,
-the previous shipping address would be updated.
+Function checks if the user already has two linked addresses, returns true if they do.
+When registering, the user inputs their billing address. At checkout they are asked if they would like to add an aditional address to be used as shipping address,
+A new address is linked to the user and they checkout. If the user goes through checkout once more and picks the different address option again, instead of a new address being created,
+the previous shipping address would be updated to match.
 */
 CREATE OR REPLACE FUNCTION check_two_addresses(id_user varchar(20))
     RETURNS BOOLEAN AS $$

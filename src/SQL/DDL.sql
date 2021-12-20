@@ -1,6 +1,8 @@
 DROP Schema project CASCADE;
 CREATE schema project;
 
+-- Table Creation
+
 CREATE TABLE project.user (
     user_id 	varchar(20) PRIMARY KEY,
     email 	varchar(100) UNIQUE,
@@ -64,6 +66,7 @@ CREATE TABLE project.order (
     total_price 	numeric(9,2)
 );
 
+--Relations
 
 CREATE TABLE project.publishes (
     isbn 	numeric(13,0) REFERENCES project.book(isbn) ON DELETE CASCADE,

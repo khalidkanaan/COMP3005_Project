@@ -44,3 +44,9 @@ BEGIN
 END;
 $$ 	LANGUAGE plpgsql;
 --
+
+/*
+Create the UUID extention in case it has not already been created.
+*/
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+--

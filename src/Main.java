@@ -1,7 +1,6 @@
 import javax.swing.*;
 import java.io.*;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -31,8 +30,8 @@ public class Main {
     public static void main(String[] args) throws SQLException {
         int reply1 = JOptionPane.showConfirmDialog(null, "Is this your first time running this program?", "Overwrite Message", JOptionPane.YES_NO_OPTION);
         if (reply1 == JOptionPane.YES_OPTION) {
-            executeSqlScript(connection, new File("src/SQL/Queries.sql"), ";");
-            executeSqlScript(connection, new File("src/SQL/Setup.sql"), ";" );
+            executeSqlScript(connection, new File("src/SQL/DDL.sql"), ";");
+            executeSqlScript(connection, new File("src/SQL/Queries.sql"), ";" );
             executeSqlScript(connection, new File("src/SQL/Functions.sql"), "--" );
             startMenu();
         } else if(checkSchemaAlreadyExists()){
@@ -169,6 +168,7 @@ public class Main {
         System.out.println("Enter your phone number: ");
         long phonenum = checkLong(scanner,"Enter your phone number: " );
 
+        //Inserts all the values into the user table
         String sql2 = "INSERT INTO project.user(user_id, email, password, first_name, last_name, phone_number) VALUES" + " ('"+usern+"', '"+email+"', '"+password+"', '"+firstn+"', '"+lastn+"', '"+phonenum+"');";
 
         Statement statement1 = connection.createStatement();
@@ -193,6 +193,7 @@ public class Main {
         System.out.println("Enter your password: ");
         String password = scanner.next();
 
+        //The email and password can be used as identification because the email has a unique constraint
         String sql = "Select * FROM project.user WHERE email = '"+email+"' AND password ='"+password+"';";
         Statement statement = connection.createStatement();
         ResultSet result = statement.executeQuery(sql);
@@ -210,7 +211,10 @@ public class Main {
             result = statement.executeQuery(sql);
         }
 
+        //stores the user_id in the instance variable Login when a valid email and password are entered.
         Login = result.getString("user_id");
+
+        //Queries the function to check whether the email and password entered belong to an owner if so then ownerActions() is invoked
         sql = "Select * FROM project.user WHERE email = '"+email+"' AND password ='"+password+"'AND isOwner='"+true+"';";
         statement = connection.createStatement();
         result = statement.executeQuery(sql);
@@ -237,6 +241,7 @@ public class Main {
             System.out.println("Different Books: "+ result.getString("totalBooks"));
         }
 
+        //Displays all the books from book table
         sql = "Select * FROM project.book;";
         statement = connection.createStatement();
         result = statement.executeQuery(sql);
@@ -323,6 +328,7 @@ public class Main {
         System.out.println("Enter book ISBN: ");
         Long isbn = checkLong(scanner, "Enter book ISBN: ");
 
+        //counts the number of tuples for a book with a specified isbn to check if the book is in the library.
         String sql = "SELECT count(*) AS book_in_library FROM project.book WHERE isbn = '"+isbn+"';";
         Statement findIsbn = connection.createStatement();
         ResultSet matchBook = findIsbn.executeQuery(sql);
@@ -331,6 +337,7 @@ public class Main {
         while(matchBook.next()){
             inLibrary = matchBook.getInt("book_in_library");
         }
+        //if the book is in the library increment the inventory
         if(inLibrary == 1){
             System.out.println("Book found in library");
             System.out.println("Enter the quantity of this books that you would like to add: ");
@@ -343,6 +350,7 @@ public class Main {
 
             transferMoney(stock_increase, isbn);
 
+        //else if the book is not found in the library, meaning inLibrary = 0, add all book information
         }else{
             System.out.println("Enter book name: ");
             scanner.nextLine();
@@ -372,6 +380,7 @@ public class Main {
             Statement insertBook = connection.createStatement();
             insertBook.executeUpdate(sql2);
 
+            //links the book to an existing publisher or creates a new one if the publisher does not exist
             linkPublisher(isbn);
             transferMoney(stock, isbn);
         }
@@ -440,6 +449,7 @@ public class Main {
         System.out.println("Enter year published for book: ");
         int year = checkQuantity(scanner,"Enter year published for book: ");
 
+        //queries the publisher table to see whether the publisher already exists
         String sql = "SELECT publisher_name, count(*) AS publisher_exist FROM project.publisher WHERE " +
                      "publisher_name ILIKE '"+publisher+"' GROUP BY publisher_name;";
         Statement findPublisher = connection.createStatement();
@@ -450,6 +460,7 @@ public class Main {
             inPublisher = matchPublisher.getInt("publisher_exist");
             publisher = matchPublisher.getString("publisher_name"); //if the publisher name was entered in lower case, this is corrected here.
         }
+        //if the publisher already exists, the book is linked to that publisher
         if(inPublisher == 1) {
             System.out.println("Publisher already exists as a publisher");
             System.out.println("Book is now linked to an existing publisher");
@@ -490,7 +501,7 @@ public class Main {
      * @param address_id set to null if isUpdate is false
      * @throws SQLException
      */
-    public static void createUserAddress(boolean isUpdate, Object address_id) throws SQLException {
+    public static void createOrUpdateUserAddress(boolean isUpdate, Object address_id) throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your street number: ");
         int street_num = checkQuantity(scanner, "Enter your street number: ");
@@ -511,8 +522,10 @@ public class Main {
 
         String sql = "";
         if(isUpdate){
+            //Update existing address, dictated by the boolean parameter in the function. address_id parameter is used in the WHERE condition to find update/SET the values of the desired address.
             sql = "UPDATE project.address SET street_num = '"+street_num+"', street_name = '"+street_name+"', apartment = '"+apartment+"', city = '"+city+"', province = '"+province+"', country = '"+country+"', postal_code = '"+postal+"' WHERE address_id = '"+address_id+"';";
         }else{
+            //Inserts new address, dictated by the boolean parameter in the function.
             sql = "INSERT INTO project.address(street_num, street_name, apartment, city, province, country, postal_code) VALUES" +
                     " ('"+street_num+"', '"+street_name+"', '"+apartment+"', '"+city+"', '"+province+"', '"+country+"', '"+postal+"');";
 
@@ -542,7 +555,7 @@ public class Main {
      */
     public static void createAndLinkUserAddress(String user_id) throws SQLException {
         //calls the function that creates the address
-        createUserAddress(false,null);
+        createOrUpdateUserAddress(false,null);
 
         //looks up the address that we just added and finds the address_id
         String sql2 = "SELECT currval('project.address_address_id_seq'::regclass);";
@@ -568,6 +581,7 @@ public class Main {
         Statement statement = connection.createStatement();
         statement.executeUpdate(sql);
 
+        //retrieves the current value of the cart_id by querying the bigserial function associated with cart_id in cart.
         String sql1 = "SELECT currval('project.cart_cart_id_seq'::regclass);";
         Statement findCart = connection.createStatement();
         ResultSet matchCart = findCart.executeQuery(sql1);
@@ -576,6 +590,7 @@ public class Main {
             cart_id = matchCart.getInt("currval");
         }
 
+        //links the user entity to the cart entity via userCart relation in the project schema.
         String sql2 = "INSERT INTO project.userCart(user_id, cart_id) VALUES ('"+user_id+"', '"+cart_id+"');";
         Statement statement1 = connection.createStatement();
         statement1.executeUpdate(sql2);
@@ -608,6 +623,7 @@ public class Main {
         System.out.println("Enter postal code: ");
         String postal = scanner.next();
 
+        //inserts the values of the address into the address table. isShipping is not specified since the default value is set to true.
         String sql = "INSERT INTO project.address(street_num, street_name, apartment, city, province, country, postal_code) VALUES" +
                                             " ('"+street_num+"', '"+street_name+"', '"+apartment+"', '"+city+"', '"+province+"', '"+country+"', '"+postal+"');";
 
@@ -654,6 +670,8 @@ public class Main {
             if (scanner.hasNext()) {
                 id = scanner.next();
             }
+
+            //Queries the number of tuples in the user where the user_id is what the user inputs.
             String sql = "SELECT count(*) AS userFound FROM project.user WHERE user_id = '"+id+"';";
             Statement statement = connection.createStatement();
             ResultSet result = statement.executeQuery(sql);
@@ -662,9 +680,11 @@ public class Main {
                 userExists = result.getInt("userFound");
             }
 
+            //if the user_id is not taken meaning, userExists = 0 for the number of tuples displayed WHERE user_id = 'id entered'
             if(userExists == 0){
                 return id;
 
+            //if the user_id is taken then suggest a unique user_id using java random with numbers.
             }else if(userExists == 1) {
                 int[] intArray = {0,1,2,3,4,5,6,7,8,9};
                 String idx = String.valueOf(new Random().nextInt(intArray.length));
@@ -768,6 +788,7 @@ public class Main {
         int before=0;
         int after=0;
 
+        //counts the number of tuples in the book table
         String sql= "Select count (*) AS totalBooks FROM project.book;";
         Statement statement = connection.createStatement();
         ResultSet result = statement.executeQuery(sql);
@@ -779,15 +800,17 @@ public class Main {
             return;
         }
 
+        //delinks the book from publishes
         sql = "DELETE FROM project.publishes WHERE isbn = '"+isbn+"';";
         Statement statement1 = connection.createStatement();
         statement1.executeUpdate(sql);
 
-
+        //deletes the book from book
         sql = "DELETE FROM project.book WHERE isbn = '"+isbn+"';";
         Statement statement2 = connection.createStatement();
         statement2.executeUpdate(sql);
 
+        //queries the count of the books again to check if the book was removed successfully
         sql= "Select count (*) AS totalBooks FROM project.book;";
         Statement statement3 = connection.createStatement();
         ResultSet result2 = statement3.executeQuery(sql);
@@ -827,6 +850,7 @@ public class Main {
         while(scanner.hasNext()){
             String s1 = scanner.next();
             if(s1.equals("p")){
+                //queries the information needed for publisher report
                 String sql = "Select publisher_name, bank_account FROM project.publisher;";
                 Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql);
@@ -838,6 +862,9 @@ public class Main {
 
             if(s1.equals("t")){
                 System.out.println("Total Sales Report: ");
+
+                //queries the information needed for total sales report. The sum operation is used to sum all
+                // the books sold and multiply them by their respective retail price which is the sell_price
                 String sql = "Select sum(sales * sell_price) AS salesSum FROM project.book;";
                 Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql);
@@ -845,6 +872,9 @@ public class Main {
                 while (result.next()){
                     salesSum = result.getDouble("salesSum");
                 }
+
+                //queries the expenditure of the owner, this amount represents the total amount an owner has
+                //paid for all the books bought directly from the publishers which are sold to the owner at publisher_fee price.
                 String sql1 = "SELECT expenditure FROM project.owner;";
                 Statement statement1 = connection.createStatement();
                 ResultSet result1 = statement.executeQuery(sql1);
@@ -979,7 +1009,7 @@ public class Main {
                 scanner.nextLine();
                 String title = scanner.nextLine();
 
-
+                //ILIKE ignores case sensitivity, and the % symbols are used to represnt a set of letters preceeding and proceeding the pattern we are looking for.
                 String sql = "Select * FROM project.book WHERE title ILIKE'%"+title+"%';";
                 Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql);
@@ -995,6 +1025,7 @@ public class Main {
                 scanner.nextLine();
                 String author = scanner.nextLine();
 
+                //Like above, the ILIKE is used to query all the tuples with a similar author_lastn
                 String sql = "Select * FROM project.book WHERE author_lastn ILIKE'%"+author+"%';";
                 Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql);
@@ -1010,6 +1041,7 @@ public class Main {
                 scanner.nextLine();
                 String genre = scanner.nextLine();
 
+                //ILIKE used for genre because why not.
                 String sql = "Select * FROM project.book WHERE genre ILIKE'%"+genre+"%';";
                 Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql);
@@ -1061,6 +1093,8 @@ public class Main {
 
         }
         if(exists){
+
+            //retrieves the inventory of the specific book
             String getStock = "SELECT inventory FROM project.book WHERE isbn ='"+book_id+"';";
             Statement getStockAmount = connection.createStatement();
             ResultSet stockResult = getStockAmount.executeQuery(getStock);
@@ -1070,6 +1104,7 @@ public class Main {
             }
 
             boolean inCart = false;
+            //Finds the quantity of the specified book to add in the cart
             String sql3 = "SELECT * FROM project.cartItem WHERE isbn ='"+book_id+"';";
             Statement statement3 = connection.createStatement();
             ResultSet result3 = statement3.executeQuery(sql3);
@@ -1082,6 +1117,7 @@ public class Main {
             System.out.println("How many copies would you like?");
 
             quantity = checkQuantity(scanner,"How many copies would you like?");
+            //used to retreive the cart_id of the user by use of natural join
             String sql1 = "SELECT cart_id FROM project.userAddress NATURAL JOIN project.userCart WHERE user_id = '"+Login+"';";
             Statement statement1 = connection.createStatement();
             ResultSet result1 = statement1.executeQuery(sql1);
@@ -1095,6 +1131,7 @@ public class Main {
                 if(quantity+quantityInCart >= inventory){
                     quantity = inventory-quantityInCart;
                 }
+                //updates the quantity of a specific book in cart for the cart_id associated with the user_id
                 String sql4 = "UPDATE project.cartItem SET quantity = quantity + '"+quantity+"' WHERE cart_id = '"+cartID+"'AND isbn = '"+book_id+"';";
                 Statement statement4 = connection.createStatement();
                 statement4.executeUpdate(sql4);
@@ -1143,6 +1180,7 @@ public class Main {
         String title="";
 
         s = checkLong(scanner,"Enter ISBN Book you would like to Remove");
+        //if result.next() is true then this select operation outputs a tuple
         String sql = "SELECT * FROM project.cartItem WHERE isbn ='"+s+"';";
 
         boolean exists = false;
@@ -1153,6 +1191,7 @@ public class Main {
         }
 
         if (exists){
+            //Select operations used to retreive the title of the book
             String sq = "SELECT * FROM project.book WHERE isbn ='"+s+"';";
             Statement state = connection.createStatement();
             ResultSet r = state.executeQuery(sq);
@@ -1166,6 +1205,7 @@ public class Main {
             quantity = checkQuantity(scanner,"How many copies of this book would you like to remove?");
 
             int inCart =0;
+            //queries the quantity of that specific book in the cart
             String sql3 = "SELECT quantity FROM project.cartItem WHERE isbn ='"+s+"';";
             Statement statement3 = connection.createStatement();
             ResultSet result3 = statement3.executeQuery(sql3);
@@ -1173,6 +1213,7 @@ public class Main {
                 inCart = result3.getInt("quantity");
             }
 
+            //finds the cart_id associated with the user_id of the current user.
             String sql1 = "SELECT cart_id FROM project.userAddress NATURAL JOIN project.cart WHERE user_id = '"+Login+"';";
             Statement statement1 = connection.createStatement();
             ResultSet result1 = statement1.executeQuery(sql1);
@@ -1181,11 +1222,14 @@ public class Main {
                 cartID = result1.getInt("cart_id");
             }
 
+            //if the quantity to be removed is greater than the quantity in the user cart then delete the cart_item from the cart
             if(inCart <= quantity){
                 String sql2 = "DELETE FROM project.cartItem WHERE cart_id = '"+cartID+"'AND isbn = '"+s+"';";
                 Statement statement2 = connection.createStatement();
                 statement2.executeUpdate(sql2);
                 System.out.println("Removed "+title+ " from cart.");
+
+            //else if the quantity to be removed is less than the quantity in cart then simply deduct the quantity.
             }else if(inCart > quantity){
                 String sql2 = "UPDATE project.cartItem SET quantity = quantity - '"+quantity+"' WHERE cart_id = '"+cartID+"'AND isbn = '"+s+"';";
                 Statement statement2 = connection.createStatement();
@@ -1217,6 +1261,7 @@ public class Main {
      * @throws SQLException
      */
     public static void viewUserCart() throws SQLException{
+        //Extracts the cart_id associated with the user_id from the userCart relation.
         String sql = "SELECT cart_id FROM project.userCart WHERE user_id = '"+Login+"';";
         Statement statement = connection.createStatement();
         ResultSet result = statement.executeQuery(sql);
@@ -1224,6 +1269,8 @@ public class Main {
         while(result.next()){
             cart_id = result.getString("cart_id");
         }
+
+        //Select information about each book in that specifc cart_id to be outputted in the while loop below. Natural join is used with cart_item and book to join both tables usin the shared ISBN column.
         String sql1 = "SELECT isbn, quantity, title, sell_price FROM project.cartItem NATURAL JOIN project.book WHERE cart_id = '"+cart_id+"';";
         Statement statement1 = connection.createStatement();
         ResultSet result1 = statement1.executeQuery(sql1);
@@ -1247,6 +1294,8 @@ public class Main {
 
             System.out.println("Item "+count+": ISBN: "+isbn+" Title: "+title+" Quantity: "+quantity+" price/book: $"+sell_price+" Total price: $"+total_per_book);
         }
+
+        //simpe calculations that output the total price and tax of all the cart_items and their quantities.
         System.out.println("Price Before Tax: $"+total_cart_value);
         System.out.println("GST: $"+ Math.round(total_cart_value*0.13*100.0)/100.0);
         System.out.println("Overall Price: : $"+ Math.round(total_cart_value*1.13*100.0)/100.0);
@@ -1280,6 +1329,7 @@ public class Main {
      * @throws SQLException
      */
     public static boolean cartEmpty() throws SQLException {
+        //retreives the cart_id given the user_id. This query was executed many times and should be implemented as its own method later.
         String sql = "SELECT cart_id FROM project.userCart WHERE user_id = '"+Login+"';";
         Statement statement = connection.createStatement();
         ResultSet result = statement.executeQuery(sql);
@@ -1288,6 +1338,7 @@ public class Main {
             cart_id = result.getString("cart_id");
         }
 
+        //counts the number of books/cart_items in the current user's cart
         String sql1 = "SELECT count(*) FROM project.cartItem WHERE cart_id = '"+cart_id+"';";
         Statement statement1 = connection.createStatement();
         ResultSet result1 = statement1.executeQuery(sql1);
@@ -1295,6 +1346,7 @@ public class Main {
         while(result1.next()){
             count = result1.getInt("count");
         }
+        //if the cart is empty return true, false otherwise
         if (count == 0){
             return true;
         }else{
@@ -1302,7 +1354,15 @@ public class Main {
         }
     }
 
+    /**
+     * Displays the current user shipping or billing address depending on what is specified
+     * in the parameter.
+     * @param isShipping true returns and prints shipping address_id, false is vice versa
+     * @return Integer representing address_id of the address that was outputted
+     * @throws SQLException
+     */
     public static int displayCurrentUserAddress(boolean isShipping) throws SQLException {
+        //simple query statement, uses natural join with userAddress to allow for use of a WHERE condition that specifies address_id using the user_id
         String sql = "SELECT address_id, street_num, street_name, apartment, city, province, country, postal_code FROM project.address NATURAL JOIN project.userAddress WHERE user_id = '"+Login+"' AND isShipping = '"+isShipping+"';";
         Statement statement = connection.createStatement();
         ResultSet result = statement.executeQuery(sql);
@@ -1360,17 +1420,20 @@ public class Main {
                     System.out.println("\nDo you want to use that Shipping address for your order? (yes/no) ");
                     String s2 = scanner.next();
                     if(s2.equals("yes") || s2.equals("y") || s2.equals("Yes") || s2.equals("Y")){
+                        //creates an order with the default shipping address created at registeration. This address also serves as the billing address.
                         createOrder();
                         return;
 
                     }else if(s2.equals("no") || s2.equals("n") || s2.equals("No") || s2.equals("N")){
-                        //continue from here
+                        //if a user does not want to use the default shipping address then the number of addresses associated with the user_id is checked
                         if(hasTwoAddresses()){
+                            //if the user already has two addresses, meaning 1 shipping and 1 billing then update the shipping address.
                             System.out.println("Updating your shipping address");
-                            createUserAddress(true,address_id);
+                            createOrUpdateUserAddress(true,address_id);
                             System.out.println("Shipping address updated");
                             createOrder();
                         }else{
+                            //else, if the user has one address which served as both shipping and billing, then create a new shipping address for user and make the registration one their billing address.
                             changeShippingToBilling(address_id);
                             createAndLinkUserAddress(Login);
                             createOrder();
@@ -1402,6 +1465,7 @@ public class Main {
      * @throws SQLException
      */
     public static boolean hasTwoAddresses() throws SQLException {
+        //uses function created
         String sql = "SELECT check_two_addresses('"+Login+"');";
         Statement statement = connection.createStatement();
         ResultSet result = statement.executeQuery(sql);
@@ -1421,6 +1485,7 @@ public class Main {
      * @throws SQLException
      */
     public static void createOrder() throws SQLException{
+        //this array of integers is used with java Random to generate a set of random 10 digits which will then become the tacking number
         int[] intArray = {0,1,2,3,4,5,6,7,8,9};
         String idx = String.valueOf(new Random().nextInt(intArray.length));
         for(int i = 0; i < 8; i++){
@@ -1482,6 +1547,7 @@ public class Main {
             order_id = result3.getString("order_id");
         }
 
+        //Inserts the order values into the order table
         String sql4 = "INSERT INTO project.order(order_num, tracking_num, total_price) VALUES ('"+order_id+"', '"+trackingNum+"', '"+total_cart_value+"');";
         Statement statement4 = connection.createStatement();
         statement4.executeUpdate(sql4);
@@ -1587,6 +1653,7 @@ public class Main {
      */
     public static void viewOrders() throws SQLException {
         Scanner scanner = new Scanner(System.in);
+        //nested select statement used to query all the orders associated with the user_id to avoid duplicate tuples.
         String sql = "SELECT * from project.order NATURAL JOIN (SELECT * from project.orderAddress NATURAL JOIN project.userAddress) AS FOO " +
                      "WHERE user_id = '"+Login+"' ORDER BY order_date DESC;";
 
@@ -1634,6 +1701,7 @@ public class Main {
         System.out.println("Please enter the tracking number of the order you would like to track");
         String tracking_number = scanner.next();
 
+        //Simple select statement that utilizes natural join between order and orderAddress in order to extract the complete order address specified by the user at checkout
         String sql = "SELECT order_num, order_date, carrier, address_id from project.order NATURAL JOIN project.orderAddress WHERE tracking_num = '"+tracking_number+"';";
         Statement statement = connection.createStatement();
         ResultSet result = statement.executeQuery(sql);

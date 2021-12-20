@@ -1,3 +1,6 @@
+/* Books
+Inserting the Libary of Books into the Database
+*/
 insert into project.book(isbn, title, author_firstn, author_lastn, genre, page_num, sell_price, publisher_fee, inventory, sales) values (9780345339706, 'THE LORD OF THE RINGS : The Fellowship of the Ring', 'J. R. R.', 'Tolkien','Fantasy','423','17.39','7','15', '0');
 insert into project.book(isbn, title, author_firstn, author_lastn, genre, page_num, sell_price, publisher_fee, inventory, sales) values (9788845292613, 'THE LORD OF THE RINGS : The Hobbit', 'J. R. R.', 'Tolkien','Fantasy','326','16.39','2.59','20', '0');
 insert into project.book(isbn, title, author_firstn, author_lastn, genre, page_num, sell_price, publisher_fee, inventory, sales) values (9780345339719, 'THE LORD OF THE RINGS : The Two Towers', 'J. R. R.', 'Tolkien','Fantasy','352','14.99','3.99','12', '0');
@@ -20,6 +23,9 @@ insert into project.book(isbn, title, author_firstn, author_lastn, genre, page_n
 insert into project.book(isbn, title, author_firstn, author_lastn, genre, page_num, sell_price, publisher_fee, inventory, sales) values (1290434523345, 'Alligator Baby', 'Robert', 'Munsch','Children','29 ','2.99','0.20','12', '0');
 insert into project.book(isbn, title, author_firstn, author_lastn, genre, page_num, sell_price, publisher_fee, inventory, sales) values (1292544523352, 'The Paper Bag Princess', 'Robert', 'Munsch','Children','35 ','2.99','0.20','12', '0');
 
+/* Publishers
+Inserting publishers into the database
+*/
 insert into project.publisher(publisher_name, email, phone_number) values ('George Allen & Unwin','george.unwin@gmail.com','6136565000');
 insert into project.publisher(publisher_name, email, phone_number) values ('Warner Bros.','warner.inc@gmail.com','8995256000');
 insert into project.publisher(publisher_name, email, phone_number) values ('Philosophy 101','aristotle.plato@gmail.com','2598224646');
@@ -28,12 +34,18 @@ insert into project.publisher(publisher_name, email, phone_number) values ('Scho
 SELECT nextval('project.address_address_id_seq'::regclass);
 ALTER SEQUENCE project.address_address_id_seq RESTART WITH 1;
 
+/* Address
+Inserting addresses into the Database
+*/
 insert into project.address(street_num,street_name,apartment,city,province,country,postal_code) values ('1919','Oxford university','456','Oxford','Yorkland','England','k4nljl');
 insert into project.address(street_num,street_name,apartment,city,province,country,postal_code) values ('2021','UCLA','4520','Los Angeles','California','America','l6p8v1');
 insert into project.address(street_num,street_name,apartment,city,province,country,postal_code) values ('0203','University Halls','145','Athens','Mianland','Greece','t1tb0b');
 insert into project.address(street_num,street_name,apartment,city,province,country,postal_code) values ('1234','Carleton University','420','Ottawa','Ontario','Canada','k1n2k9');
 insert into project.address(street_num,street_name,apartment,city,province,country,postal_code) values ('3325','Stalwart Crescent','468','Ottawa','Ontario','Canada','k1t0h2');
 
+/* Publishes
+Creating links between Books and their respective Publishers
+*/
 insert into project.publishes(isbn, publisher_name, year) values (9780345339706, 'George Allen & Unwin', 1939);
 insert into project.publishes(isbn, publisher_name, year) values (9788845292613, 'George Allen & Unwin', 1954);
 insert into project.publishes(isbn, publisher_name, year) values (9780345339719, 'George Allen & Unwin', 1967);
@@ -56,12 +68,17 @@ insert into project.publishes(isbn, publisher_name, year) values (1290434956347,
 insert into project.publishes(isbn, publisher_name, year) values (1290434523345, 'Scholastic Press', 1996);
 insert into project.publishes(isbn, publisher_name, year) values (1292544523352, 'Scholastic Press', 2001);
 
-
+/* Publisher Address
+Creating links between Publishers and their respective addresses
+*/
 insert into project.publisherAddress(publisher_name, address_id) values ('George Allen & Unwin', 1);
 insert into project.publisherAddress(publisher_name, address_id) values ('Warner Bros.', 2);
 insert into project.publisherAddress(publisher_name, address_id) values ('Philosophy 101', 3);
 insert into project.publisherAddress(publisher_name, address_id) values ('Scholastic Press', 4);
 
+/* Admin
+Admin preregistration
+*/
 insert into project.user(user_id, email, password, first_name, last_name, phone_number, isOwner) values ('admin', 'admin@admin.com', '123', 'admin', 'admin', '6131111111', 'true');
 insert into project.address(street_num, street_name, apartment, city, province, country, postal_code) VALUES ('123', 'admin', 'A', 'A' , 'Alberta', 'Canada', 'A1A1A1');
 insert into project.userAddress(address_id, user_id) values (currval('project.address_address_id_seq'::regclass), 'admin');
@@ -70,6 +87,9 @@ insert into project.cart DEFAULT VALUES;
 insert into project.userCart(user_id, cart_id) VALUES ('admin', currval('project.cart_cart_id_seq'::regclass));
 
 
+/* Owner Expenditure
+Updating the Owner's expenditure based on the current stock of books.
+*/
 update project.publisher set bank_account = bank_account + 15*7 where publisher_name = 'George Allen & Unwin';
 update project.owner set expenditure = expenditure - 15*7;
 update project.publisher set bank_account = bank_account + 20*2.59 where publisher_name = 'George Allen & Unwin';
